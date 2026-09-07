@@ -1,10 +1,8 @@
 /**
  * Turns links in the compendium into players:
- *   YouTube  -> click-to-load iframe, keeping ?t= timestamps
- *   Video files (/assets/videos/*) -> inline <video>
- *   Discord  -> a button linking to the message, plus an upload button so the clip
- *               can be re-hosted here
- * Players sit in a <details> so they can be folded away.
+ *   YouTube  -> folded thumbnail that opens into an autoplaying iframe, keeping ?t= timestamps
+ *   Video files (/assets/videos/*) -> folded thumbnail that opens into a <video>
+ *   Discord  -> a button linking to the message, with an upload button on hover
  */
 (function () {
   const VIDEO_EXT = /\.(mp4|webm|mov|m4v)(\?.*)?$/i;
@@ -33,51 +31,48 @@
     return node;
   }
 
-  function mediaBox(title) {
-    const box = el("details", "media", { open: true });
+  /* A folded player: thumbnail plus title, expanding into the real player on open. */
+  function mediaBox(title, label, thumbSrc, buildPlayer) {
+    const box = el("details", "media");
     const summary = el("summary", "media-summary");
-    summary.textContent = title || "Video";
+    if (thumbSrc) {
+      summary.append(el("img", "media-thumb", { src: thumbSrc, alt: "", loading: "lazy" }));
+    }
+    summary.append(el("span", "media-title", { textContent: label }));
     box.append(summary);
+
+    const frame = el("div", "media-frame");
+    box.append(frame);
+    box.addEventListener("toggle", function () {
+      if (box.open) {
+        if (!frame.firstChild) frame.append(buildPlayer());
+      } else {
+        frame.replaceChildren();
+      }
+    });
     return box;
   }
 
-  function youtubeCard(info, title) {
-    const card = mediaBox(title);
-    const frame = el("div", "media-frame");
-    frame.append(
-      el("img", "media-thumb", {
-        src: `https://i.ytimg.com/vi/${info.id}/hqdefault.jpg`,
-        alt: title || "Video thumbnail",
-        loading: "lazy",
-      })
-    );
-    const play = el("button", "media-play", { type: "button" });
-    play.setAttribute("aria-label", "Play video" + (title ? ": " + title : ""));
-    play.append(el("span", "play-icon"));
-    play.addEventListener("click", function () {
+  function youtubeCard(info, title, label) {
+    return mediaBox(title, label, `https://i.ytimg.com/vi/${info.id}/mqdefault.jpg`, function () {
       const iframe = el("iframe", null, {
         src:
           `https://www.youtube-nocookie.com/embed/${info.id}?autoplay=1&rel=0` +
           (info.start ? `&start=${info.start}` : ""),
         allow: "accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture",
-        title: title || "YouTube video",
+        title: title,
       });
       iframe.allowFullscreen = true;
-      frame.replaceChildren(iframe);
+      return iframe;
     });
-    frame.append(play);
-    card.append(frame);
-    return card;
   }
 
-  function videoCard(href, title) {
-    const card = mediaBox(title);
-    const frame = el("div", "media-frame");
-    const video = el("video", null, { controls: true, preload: "metadata", src: href });
-    video.setAttribute("playsinline", "");
-    frame.append(video);
-    card.append(frame);
-    return card;
+  function videoCard(href, title, label) {
+    return mediaBox(title, label, null, function () {
+      const video = el("video", null, { controls: true, autoplay: true, preload: "metadata", src: href });
+      video.setAttribute("playsinline", "");
+      return video;
+    });
   }
 
   function uploadButton(discordUrl, block) {
@@ -92,6 +87,11 @@
       );
     });
     return button;
+  }
+
+  function place(block, card) {
+    if (block.tagName === "LI") block.append(card);
+    else block.insertAdjacentElement("afterend", card);
   }
 
   function enhance(root) {
@@ -121,19 +121,20 @@
           .slice(0, 120) || "Video";
       const yt = youtubeInfo(url);
 
+      const label = block.tagName === "LI" ? "Watch" : title;
+
       if (yt) {
-        a.textContent = "youtube.com";
-        block.insertAdjacentElement("afterend", youtubeCard(yt, title));
+        a.remove();
+        place(block, youtubeCard(yt, title, label));
       } else if (VIDEO_EXT.test(url.pathname)) {
-        a.textContent = "video";
-        block.insertAdjacentElement("afterend", videoCard(a.href, title));
+        a.remove();
+        place(block, videoCard(url.href, title, label));
       } else if (/(^|\.)discord\.com$/.test(url.hostname) && url.pathname.startsWith("/channels/")) {
+        const group = el("span", "clip-group");
+        a.replaceWith(group);
         a.textContent = "Clip on Discord";
         a.className = "btn tiny discord-btn";
-        if (!block.querySelector(".upload-btn")) {
-          a.insertAdjacentText("afterend", " ");
-          a.insertAdjacentElement("afterend", uploadButton(a.href, block));
-        }
+        group.append(a, uploadButton(a.href, block));
       }
     });
   }
