@@ -16,6 +16,19 @@ export default function (eleventyConfig) {
     })
   );
 
+  /* An image alone in a paragraph becomes a figure, its alt text the caption. */
+  eleventyConfig.addTransform("figures", (content, outputPath) => {
+    if (!outputPath || !outputPath.endsWith(".html")) return content;
+    return content.replace(
+      /<p>(<img [^>]*>)<\/p>/g,
+      (match, img) => {
+        const alt = /alt="([^"]*)"/.exec(img);
+        if (!alt || !alt[1]) return match;
+        return `<figure>${img}<figcaption>${alt[1]}</figcaption></figure>`;
+      }
+    );
+  });
+
   eleventyConfig.addCollection("sections", (collection) =>
     collection
       .getFilteredByGlob("src/content/*.md")

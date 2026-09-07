@@ -3,8 +3,9 @@
 Static site (Eleventy) for the Big Walk speedrunning compendium, deployed to GitHub Pages.
 
 - Content lives in `src/content/*.md`, one file per top-level section.
-- YouTube links become click-to-load players.
-- Discord clip links stay plain links with an "Upload a copy" button so the clip can be re-hosted here.
+- YouTube links become folded thumbnails that expand and play when clicked.
+- Discord clip links become a "Clip on Discord" button with an "Upload" button on hover, so the clip can be re-hosted here.
+- An image on its own line becomes a figure, with its alt text as the caption below it.
 - Files in `src/assets/videos/` linked as `/assets/videos/<file>` render as inline `<video>` players.
 - Readers suggest changes by selecting text, right-clicking and choosing "Suggest". No GitHub account or PR.
 - Maintainers edit at `/admin/` (Sveltia CMS), which commits straight to `main`.

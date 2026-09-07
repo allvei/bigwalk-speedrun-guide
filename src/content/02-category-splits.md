@@ -7,8 +7,6 @@ order: 2
 
 ![The Big Walk Speedrun.com page as of the creation of this segment of the guide](/assets/images/speedruncom-categories.png)
 
-*The Big Walk Speedrun.com page as of the creation of this segment of the guide*
-
 Right now, we have two different endings, and therefore two different categories. These are:
 
 - **Big Goodbye** (Reach the white ending door at the northernmost part of the island)
