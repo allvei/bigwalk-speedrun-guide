@@ -2,7 +2,9 @@
  * Turns links in the compendium into players:
  *   YouTube  -> click-to-load iframe, keeping ?t= timestamps
  *   Video files (/assets/videos/*) -> inline <video>
- *   Discord  -> stays a plain link, with a button to upload a copy we can host
+ *   Discord  -> a button linking to the message, plus an upload button so the clip
+ *               can be re-hosted here
+ * Players sit in a <details> so they can be folded away.
  */
 (function () {
   const VIDEO_EXT = /\.(mp4|webm|mov|m4v)(\?.*)?$/i;
@@ -31,8 +33,16 @@
     return node;
   }
 
+  function mediaBox(title) {
+    const box = el("details", "media", { open: true });
+    const summary = el("summary", "media-summary");
+    summary.textContent = title || "Video";
+    box.append(summary);
+    return box;
+  }
+
   function youtubeCard(info, title) {
-    const card = el("figure", "media");
+    const card = mediaBox(title);
     const frame = el("div", "media-frame");
     frame.append(
       el("img", "media-thumb", {
@@ -60,8 +70,8 @@
     return card;
   }
 
-  function videoCard(href) {
-    const card = el("figure", "media");
+  function videoCard(href, title) {
+    const card = mediaBox(title);
     const frame = el("div", "media-frame");
     const video = el("video", null, { controls: true, preload: "metadata", src: href });
     video.setAttribute("playsinline", "");
@@ -72,8 +82,8 @@
 
   function uploadButton(discordUrl, block) {
     const button = el("button", "btn tiny upload-btn", { type: "button" });
-    button.textContent = "Upload a copy";
-    button.title = "Send us the video file so it can be hosted here instead";
+    button.textContent = "Upload";
+    button.title = "Replace this link with a file we can embed to the page";
     button.addEventListener("click", function () {
       window.dispatchEvent(
         new CustomEvent("suggest:open", {
@@ -102,7 +112,13 @@
       }
 
       const block = a.closest("p, li") || a;
-      const title = (block.textContent || "").trim().replace(/\s+/g, " ").slice(0, 120);
+      const title =
+        (block.textContent || "")
+          .replace(a.textContent, "")
+          .replace(/\s+/g, " ")
+          .replace(/[:\-\s]+$/, "")
+          .trim()
+          .slice(0, 120) || "Video";
       const yt = youtubeInfo(url);
 
       if (yt) {
@@ -110,10 +126,10 @@
         block.insertAdjacentElement("afterend", youtubeCard(yt, title));
       } else if (VIDEO_EXT.test(url.pathname)) {
         a.textContent = "video";
-        block.insertAdjacentElement("afterend", videoCard(a.href));
+        block.insertAdjacentElement("afterend", videoCard(a.href, title));
       } else if (/(^|\.)discord\.com$/.test(url.hostname) && url.pathname.startsWith("/channels/")) {
-        a.textContent = "clip in Discord";
-        a.classList.add("discord-link");
+        a.textContent = "Clip on Discord";
+        a.className = "btn tiny discord-btn";
         if (!block.querySelector(".upload-btn")) {
           a.insertAdjacentText("afterend", " ");
           a.insertAdjacentElement("afterend", uploadButton(a.href, block));
