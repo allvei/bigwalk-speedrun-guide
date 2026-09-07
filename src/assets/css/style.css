@@ -235,3 +235,18 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 .modal .quote-line[hidden] { display: none; }
 
 #suggestions-toggle.on { color: var(--accent); border-color: var(--accent); }
+
+.thread-reply { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.thread-reply[hidden] { display: none; }
+.thread-reply textarea {
+  width: 100%;
+  resize: vertical;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: .9rem;
+}
+.thread-panel > footer a[hidden] { display: none; }

@@ -2,16 +2,19 @@
  * Suggestion threads. Every suggestion is a GitHub issue labelled "suggestion" whose body
  * carries the quoted text in an anchor comment. The page reads open issues anonymously,
  * highlights the quote in place, and shows the issue and its comments in a side panel.
- * Replying happens on GitHub, so no login or token is needed here.
+ * Reading needs no login. Signing in with GitHub (OAuth through the worker) lets people reply
+ * from the panel; anyone else follows the link to the issue.
  *
- * Highlights are off by default and turned on with the header toggle, so readers get a clean
- * page and maintainers see the open threads.
+ * Highlights are on by default for maintainers (repo write access) and off for everyone else,
+ * and the header toggle overrides that per browser.
  */
 (function () {
   const cfg = window.SITE_CONFIG || {};
   const API = "https://api.github.com/repos/" + cfg.repo;
   const ANCHOR = /<!--\s*anchor:\s*(\{[\s\S]*?\})\s*-->/;
   const STORE = "suggestions-visible";
+  const AUTH = (cfg.endpoint || "").replace(/\/$/, "") + "/auth";
+  let session = { signedIn: false };
   const ICON =
     '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
 
@@ -71,12 +74,50 @@
       <button type="button" class="icon-btn" data-thread-close aria-label="Close">&times;</button>
     </header>
     <div class="thread-body"></div>
-    <footer><a class="btn primary" target="_blank" rel="noopener" data-thread-reply>Reply on GitHub</a></footer>`;
+    <footer>
+      <form class="thread-reply" hidden>
+        <textarea name="body" rows="3" placeholder="Reply" required></textarea>
+        <button type="submit" class="btn primary">Reply</button>
+      </form>
+      <a class="btn primary" target="_blank" rel="noopener" data-thread-reply>Reply on GitHub</a>
+    </footer>`;
   document.body.appendChild(panel);
 
   const panelTitle = panel.querySelector("[data-thread-title]");
   const panelBody = panel.querySelector(".thread-body");
   const panelReply = panel.querySelector("[data-thread-reply]");
+  const replyForm = panel.querySelector(".thread-reply");
+  let openIssue = null;
+
+  replyForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+    const field = replyForm.querySelector("textarea");
+    const text = field.value.trim();
+    if (!text || !openIssue) return;
+    const button = replyForm.querySelector("button");
+    button.disabled = true;
+    try {
+      const response = await fetch(AUTH + "/comment", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ issue: openIssue.number, body: text }),
+      });
+      if (!response.ok) throw new Error();
+      const { comment: posted } = await response.json();
+      panelBody.append(comment(posted.user.login, posted.user.avatar_url, posted.created_at, posted.body));
+      field.value = "";
+      openIssue.comments += 1;
+    } catch (_) {
+      panelBody.append(
+        Object.assign(document.createElement("p"), {
+          className: "thread-loading",
+          textContent: "That reply did not go through. Open the thread on GitHub.",
+        })
+      );
+    }
+    button.disabled = false;
+  });
   panel.querySelector("[data-thread-close]").addEventListener("click", closePanel);
   document.addEventListener("keydown", (e) => e.key === "Escape" && closePanel());
 
@@ -109,7 +150,10 @@
   }
 
   async function openThread(issue) {
+    openIssue = issue;
     panel.hidden = false;
+    replyForm.hidden = !session.signedIn;
+    panelReply.hidden = session.signedIn;
     document.body.classList.add("thread-open");
     panelTitle.textContent = issue.title;
     panelReply.href = issue.html_url;
@@ -212,10 +256,50 @@
     }
   }
 
-  document.addEventListener("DOMContentLoaded", function () {
+  /* Header control: sign in with GitHub, or sign out again. */
+  function renderAuth(button) {
+    if (!cfg.endpoint) {
+      button.hidden = true;
+      return;
+    }
+    button.hidden = false;
+    button.textContent = session.signedIn ? session.login : "Sign in";
+    button.title = session.signedIn
+      ? "Signed in as " + session.login + (session.canWrite ? " (maintainer)" : "") + ". Click to sign out."
+      : "Sign in with GitHub to reply to suggestions";
+  }
+
+  async function whoami() {
+    if (!cfg.endpoint) return;
+    try {
+      const response = await fetch(AUTH + "/me", { credentials: "include" });
+      if (response.ok) session = await response.json();
+    } catch (_) {
+      /* stay signed out */
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", async function () {
     const button = document.getElementById("suggestions-toggle");
+    const authButton = document.getElementById("auth-btn");
+    if (authButton) {
+      authButton.hidden = true;
+      authButton.addEventListener("click", async function () {
+        if (!session.signedIn) {
+          window.location.href = AUTH + "/login?return=" + encodeURIComponent(window.location.href);
+          return;
+        }
+        await fetch(AUTH + "/logout", { method: "POST", credentials: "include" });
+        window.location.reload();
+      });
+    }
+
+    await whoami();
+    if (authButton) renderAuth(authButton);
     if (!button) return;
-    let on = localStorage.getItem(STORE) === "1";
+
+    const stored = localStorage.getItem(STORE);
+    let on = stored === null ? Boolean(session.canWrite) : stored === "1";
     apply(button, on);
     button.addEventListener("click", function () {
       on = !on;

@@ -8,7 +8,9 @@ Static site (Eleventy) for the Big Walk speedrunning compendium, deployed to Git
 - An image on its own line becomes a figure, with its alt text as the caption below it.
 - Files in `src/assets/videos/` linked as `/assets/videos/<file>` render as inline `<video>` players.
 - Readers suggest changes by selecting text, right-clicking and choosing "Suggest". Each suggestion becomes a GitHub issue.
-- Open issues labelled `suggestion` are read back on load: the quoted text is highlighted in the page and clicking it opens the thread, with its comments, in a side panel. Replies happen on GitHub.
+- Open issues labelled `suggestion` are read back on load: the quoted text is highlighted in the page and clicking it opens the thread, with its comments, in a side panel.
+- Highlights are on by default for maintainers (repo write access), off for everyone else, and the header toggle overrides that per browser.
+- Signing in with GitHub (OAuth, through the Worker) lets people reply from the panel; without it the panel links to the issue.
 - Maintainers edit the markdown on GitHub with repository write access (github.com or github.dev).
 
 ## Local development
@@ -40,6 +42,11 @@ npm run build      # output in _site/
 
    Until an endpoint is set, the form tells people to post in Discord instead and the upload
    field is disabled.
-4. Maintainers: give them write access to this repo (Settings > Collaborators). They edit
+4. Sign-in and in-page replies: create a GitHub OAuth app (Settings > Developer settings > OAuth
+   Apps) with homepage = the Pages URL and callback = `<worker URL>/auth/callback`. Put the client
+   id in `GITHUB_CLIENT_ID` in `worker/wrangler.toml` and the secret in
+   `wrangler secret put GITHUB_CLIENT_SECRET`. The Worker keeps the user token in an HttpOnly
+   cookie and posts comments as that user; the site never sees a token.
+5. Maintainers: give them write access to this repo (Settings > Collaborators). They edit
    `src/content/*.md` on GitHub; a push to `main` redeploys.
-5. Custom domain (optional): add `src/CNAME` containing the domain.
+6. Custom domain (optional): add `src/CNAME` containing the domain.
