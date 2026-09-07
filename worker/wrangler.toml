@@ -3,7 +3,7 @@ main = "index.js"
 compatibility_date = "2025-06-01"
 
 [vars]
-REPO = "allvei/big-walk-compendium"
+REPO = "allvei/bigwalk-speedrun-guide"
 BRANCH = "main"
 UPLOAD_BRANCH = "suggestions"
 ALLOWED_ORIGINS = "https://allvei.github.io"

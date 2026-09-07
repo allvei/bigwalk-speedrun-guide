@@ -233,3 +233,5 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
   max-height: 120px; overflow: auto;
 }
 .modal .quote-line[hidden] { display: none; }
+
+#suggestions-toggle.on { color: var(--accent); border-color: var(--accent); }

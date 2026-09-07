@@ -3,11 +3,17 @@
  * carries the quoted text in an anchor comment. The page reads open issues anonymously,
  * highlights the quote in place, and shows the issue and its comments in a side panel.
  * Replying happens on GitHub, so no login or token is needed here.
+ *
+ * Highlights are off by default and turned on with the header toggle, so readers get a clean
+ * page and maintainers see the open threads.
  */
 (function () {
   const cfg = window.SITE_CONFIG || {};
   const API = "https://api.github.com/repos/" + cfg.repo;
   const ANCHOR = /<!--\s*anchor:\s*(\{[\s\S]*?\})\s*-->/;
+  const STORE = "suggestions-visible";
+  const ICON =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
 
   function norm(text) {
     return text.replace(/\s+/g, " ");
@@ -132,9 +138,20 @@
 
   /* ---------- load ---------- */
 
+  function unmark(main) {
+    main.querySelectorAll(".suggestion-mark").forEach((mark) => {
+      const parent = mark.parentNode;
+      mark.replaceWith(...mark.childNodes);
+      parent.normalize();
+    });
+  }
+
+  let bound = false;
+
   async function load() {
     const main = document.getElementById("main");
     if (!main || !cfg.repo) return;
+    unmark(main);
 
     let issues;
     try {
@@ -165,6 +182,8 @@
       markRange(index, at, at + quote.length, issue);
     });
 
+    if (bound) return;
+    bound = true;
     main.addEventListener("click", function (event) {
       const mark = event.target.closest(".suggestion-mark");
       if (!mark) return;
@@ -178,5 +197,30 @@
     });
   }
 
-  document.addEventListener("DOMContentLoaded", load);
+  function apply(button, on) {
+    button.innerHTML = ICON;
+    button.title = on ? "Hide suggestions" : "Show suggestions";
+    button.setAttribute("aria-label", button.title);
+    button.setAttribute("aria-pressed", String(on));
+    button.classList.toggle("on", on);
+    if (on) {
+      load();
+    } else {
+      const main = document.getElementById("main");
+      if (main) unmark(main);
+      closePanel();
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const button = document.getElementById("suggestions-toggle");
+    if (!button) return;
+    let on = localStorage.getItem(STORE) === "1";
+    apply(button, on);
+    button.addEventListener("click", function () {
+      on = !on;
+      localStorage.setItem(STORE, on ? "1" : "0");
+      apply(button, on);
+    });
+  });
 })();

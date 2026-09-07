@@ -28,7 +28,7 @@ async function gh(env, path, init) {
     headers: {
       Authorization: `Bearer ${env.GITHUB_TOKEN}`,
       Accept: "application/vnd.github+json",
-      "User-Agent": "big-walk-compendium-suggestions",
+      "User-Agent": "bigwalk-speedrun-guide-suggestions",
       "Content-Type": "application/json",
     },
   });
