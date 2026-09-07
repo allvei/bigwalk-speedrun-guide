@@ -2,12 +2,10 @@ import markdownItAnchor from "markdown-it-anchor";
 
 export default function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy({ "src/assets": "assets" });
-  eleventyConfig.addPassthroughCopy({ "src/admin": "admin" });
   eleventyConfig.addPassthroughCopy({ "src/CNAME": "CNAME" });
   eleventyConfig.addWatchTarget("src/assets");
 
   eleventyConfig.ignores.add("src/assets/**");
-  eleventyConfig.ignores.add("src/admin/**");
 
   eleventyConfig.amendLibrary("md", (md) =>
     md.set({ linkify: true, typographer: false }).use(markdownItAnchor, {

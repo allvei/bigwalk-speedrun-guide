@@ -98,6 +98,7 @@ export default {
     const author = String(data.author || "").slice(0, 100);
     const media = String(data.media || "").slice(0, 500);
     const source = String(data.source || "").slice(0, 200);
+    const quote = String(data.quote || "").slice(0, 1000).trim();
     const page = String(data.page || "").slice(0, 500);
 
     let uploaded = null;
@@ -111,6 +112,7 @@ export default {
       title: `[${kind}] ${section}`,
       labels: ["suggestion", `kind:${kind}`],
       body: [
+        quote ? `<!-- anchor: ${JSON.stringify({ quote, section })} -->` : "",
         `**Section:** ${section}`,
         source ? `**Source file:** \`src/${source}\`` : "",
         page ? `**Page:** ${page}` : "",
@@ -120,6 +122,7 @@ export default {
           : "",
         `**Credit:** ${author || "anonymous"}`,
         "",
+        quote ? `> ${quote.replace(/\n/g, "\n> ")}` : "",
         "---",
         "",
         body,

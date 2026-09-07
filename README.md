@@ -7,8 +7,9 @@ Static site (Eleventy) for the Big Walk speedrunning compendium, deployed to Git
 - Discord clip links become a "Clip on Discord" button with an "Upload" button on hover, so the clip can be re-hosted here.
 - An image on its own line becomes a figure, with its alt text as the caption below it.
 - Files in `src/assets/videos/` linked as `/assets/videos/<file>` render as inline `<video>` players.
-- Readers suggest changes by selecting text, right-clicking and choosing "Suggest". No GitHub account or PR.
-- Maintainers edit at `/admin/` (Sveltia CMS), which commits straight to `main`.
+- Readers suggest changes by selecting text, right-clicking and choosing "Suggest". Each suggestion becomes a GitHub issue.
+- Open issues labelled `suggestion` are read back on load: the quoted text is highlighted in the page and clicking it opens the thread, with its comments, in a side panel. Replies happen on GitHub.
+- Maintainers edit the markdown on GitHub with repository write access (github.com or github.dev).
 
 ## Local development
 
@@ -31,13 +32,14 @@ npm run build      # output in _site/
    - [Formspree](https://formspree.io), [Basin](https://usebasin.com) or
      [Web3Forms](https://web3forms.com) also work for text-only suggestions.
 
-   The site posts JSON with `kind`, `section`, `body`, `media`, `author`, `page`, `source` and,
-   for uploads, `upload` (`name`, `type`, `size`, base64 `data`).
+   The site posts JSON with `kind`, `section`, `quote`, `body`, `media`, `author`, `page`, `source`
+   and, for uploads, `upload` (`name`, `type`, `size`, base64 `data`).
+
+   The issue body starts with `<!-- anchor: {"quote":…,"section":…} -->`. That is what the site
+   matches against the page text to place a highlight, so keep it when editing an issue.
 
    Until an endpoint is set, the form tells people to post in Discord instead and the upload
    field is disabled.
-4. Maintainer editor (`/admin/`): GitHub OAuth needs an auth broker because Pages is static.
-   Deploy [sveltia-cms-auth](https://github.com/sveltia/sveltia-cms-auth), create a GitHub OAuth
-   app pointing at it, then set `base_url` in `src/admin/config.yml` to the worker URL. Only users
-   with write access can save. Without it, maintainers can still edit the markdown on GitHub.
+4. Maintainers: give them write access to this repo (Settings > Collaborators). They edit
+   `src/content/*.md` on GitHub; a push to `main` redeploys.
 5. Custom domain (optional): add `src/CNAME` containing the domain.

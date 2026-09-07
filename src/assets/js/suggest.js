@@ -52,6 +52,7 @@
     <form class="modal">
       <h2>Suggest a change</h2>
       <p class="section-line">Section: <strong data-section-label></strong></p>
+      <blockquote class="quote-line" data-quote-label hidden></blockquote>
 
       <label for="sg-kind">Type <abbr title="required">*</abbr></label>
       <select id="sg-kind" name="kind">
@@ -74,6 +75,7 @@
       <input type="hidden" name="page">
       <input type="hidden" name="source">
       <input type="hidden" name="section">
+      <input type="hidden" name="quote">
 
       <div class="modal-actions">
         <button type="button" class="btn" data-suggest-close>Cancel</button>
@@ -86,6 +88,7 @@
   const form = backdrop.querySelector("form");
   const status = backdrop.querySelector(".status");
   const sectionLabel = backdrop.querySelector("[data-section-label]");
+  const quoteLabel = backdrop.querySelector("[data-quote-label]");
   const uploadHint = backdrop.querySelector("[data-upload-hint]");
   const fields = {
     kind: form.querySelector("#sg-kind"),
@@ -96,6 +99,7 @@
     page: form.querySelector('input[name="page"]'),
     source: form.querySelector('input[name="source"]'),
     section: form.querySelector('input[name="section"]'),
+    quote: form.querySelector('input[name="quote"]'),
   };
   uploadHint.textContent = cfg.endpoint ? `(up to ${cfg.maxUploadMB} MB)` : "(uploads not enabled yet)";
   fields.file.disabled = !cfg.endpoint;
@@ -120,6 +124,9 @@
     fields.page.value = heading && heading.id ? location.origin + location.pathname + "#" + heading.id : location.href;
     fields.source.value = opts.source || sourceFor(opts.node) || "";
     fields.body.value = opts.body || "";
+    fields.quote.value = opts.quote || "";
+    quoteLabel.textContent = fields.quote.value;
+    quoteLabel.hidden = !fields.quote.value;
     fields.media.value = opts.mediaUrl || "";
     fields.body.placeholder =
       opts.kind === "media"
@@ -152,6 +159,7 @@
     const payload = {
       kind: fields.kind.value,
       section: fields.section.value,
+      quote: fields.quote.value,
       body: fields.body.value,
       media: fields.media.value,
       author: fields.author.value,
@@ -242,7 +250,7 @@
     menu.style.top = Math.min(event.clientY, window.innerHeight - height - 8) + window.scrollY + "px";
     menu.firstChild.onclick = function () {
       hideMenu();
-      open({ kind: "edit", node: node, body: text });
+      open({ kind: "edit", node: node, quote: text });
     };
   });
 

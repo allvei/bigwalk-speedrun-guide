@@ -189,3 +189,47 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 }
 .site-footer .wrap { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
 .site-footer p { margin: 0; }
+
+/* Suggestion highlights and thread panel */
+.suggestion-mark {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+  color: inherit; border-bottom: 2px solid var(--accent); border-radius: 2px; cursor: pointer;
+}
+.suggestion-mark:hover, .suggestion-mark.active {
+  background: color-mix(in srgb, var(--accent) 48%, transparent);
+}
+
+.thread-panel {
+  position: fixed; top: 73px; right: 0; bottom: var(--footer-h); width: 360px; max-width: 92vw; z-index: 40;
+  display: flex; flex-direction: column;
+  background: var(--bg-elev); border-left: 1px solid var(--border);
+}
+.thread-panel[hidden] { display: none; }
+.thread-panel > header, .thread-panel > footer {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border);
+}
+.thread-panel > header strong { flex: 1; font-size: .95rem; line-height: 1.35; }
+.thread-panel > footer { border-bottom: 0; border-top: 1px solid var(--border); }
+.thread-body { flex: 1; overflow-y: auto; padding: 6px 14px 14px; }
+.thread-comment { padding: 12px 0; border-bottom: 1px solid var(--border); }
+.thread-comment:last-child { border-bottom: 0; }
+.thread-comment header { display: flex; align-items: center; gap: 8px; font-size: .8rem; color: var(--muted); }
+.thread-comment header img { width: 20px; height: 20px; border-radius: 50%; }
+.thread-comment .who { font-weight: 600; color: var(--text); }
+.thread-comment p { margin: 6px 0 0; font-size: .9rem; white-space: pre-wrap; }
+.thread-loading { color: var(--muted); font-size: .85rem; }
+.thread-quote {
+  margin: 12px 0 0; padding: 8px 12px; border-left: 3px solid var(--accent);
+  background: var(--bg-elev-2); color: var(--muted); font-size: .85rem; font-style: italic;
+}
+
+@media (min-width: 1100px) {
+  body.thread-open .layout { padding-right: 360px; }
+}
+
+.modal .quote-line {
+  margin: 0 0 4px; padding: 8px 12px; border-left: 3px solid var(--accent);
+  background: var(--bg-elev-2); color: var(--muted); font-size: .88rem; font-style: italic;
+  max-height: 120px; overflow: auto;
+}
+.modal .quote-line[hidden] { display: none; }
