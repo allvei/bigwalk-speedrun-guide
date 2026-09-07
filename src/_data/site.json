@@ -1,0 +1,13 @@
+{
+  "title": "Big Walk Strats and Glitches Compendium",
+  "description": "A compendium and archive of all strategies and glitches discovered for Big Walk speedrunning.",
+  "updated": "26/08/26",
+  "discordUrl": "https://discord.gg/",
+  "speedrunUrl": "https://www.speedrun.com/",
+  "repo": "allvei/big-walk-compendium",
+  "branch": "main",
+  "suggestions": {
+    "endpoint": "",
+    "fallbackIssues": true
+  }
+}

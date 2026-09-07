@@ -1,0 +1,10 @@
+name = "big-walk-suggestions"
+main = "index.js"
+compatibility_date = "2025-06-01"
+
+[vars]
+REPO = "allvei/big-walk-compendium"
+ALLOWED_ORIGINS = "https://allvei.github.io"
+
+# Secret (not stored here):
+#   wrangler secret put GITHUB_TOKEN

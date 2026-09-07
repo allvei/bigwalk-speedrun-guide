@@ -1,0 +1,9 @@
+---
+layout: layout.njk
+---
+
+{% for section in collections.sections %}
+<section class="doc-section" id="section-{{ section.fileSlug }}" data-source="{{ section.page.inputPath | replace('./src/', '') }}" data-title="{{ section.data.title }}">
+  {{ section.content | safe }}
+</section>
+{% endfor %}

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title or site.title }}</title>
+<meta name="description" content="{{ site.description }}">
+<meta property="og:title" content="{{ title or site.title }}">
+<meta property="og:description" content="{{ site.description }}">
+<meta property="og:image" content="{{ '/assets/images/big-walk-logo.png' | url }}">
+<link rel="icon" href="{{ '/assets/images/big-walk-logo.png' | url }}">
+<link rel="stylesheet" href="{{ '/assets/css/style.css' | url }}">
+<script>
+  window.SITE_CONFIG = {
+    repo: {{ site.repo | dump | safe }},
+    branch: {{ site.branch | dump | safe }},
+    endpoint: {{ site.suggestions.endpoint | dump | safe }},
+    fallbackIssues: {{ site.suggestions.fallbackIssues | dump | safe }},
+    pathPrefix: {{ ('/' | url) | dump | safe }}
+  };
+</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap">
+    <img class="logo" src="{{ '/assets/images/big-walk-logo.png' | url }}" alt="Big Walk logo">
+    <div class="titles">
+      <h1>{{ site.title }}</h1>
+      <p class="updated">Updated {{ site.updated }}</p>
+    </div>
+    <nav class="header-links">
+      <a href="{{ site.discordUrl }}">Discord</a>
+      <a href="{{ site.speedrunUrl }}">Leaderboards</a>
+      <a href="https://github.com/{{ site.repo }}">Source</a>
+      <button type="button" class="btn primary" data-suggest-open data-kind="addition">Suggest something</button>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap layout">
+  <aside class="toc" aria-label="Table of contents">
+    <nav id="toc-nav"></nav>
+  </aside>
+  <main id="main">
+    {{ content | safe }}
+  </main>
+</div>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Community-maintained. Anyone can <button type="button" class="linklike" data-suggest-open data-kind="addition">suggest an edit or addition</button> — no account required.</p>
+    <p><a href="https://github.com/{{ site.repo }}">Repository</a> · <a href="{{ '/admin/' | url }}">Editor (maintainers)</a></p>
+  </div>
+</footer>
+
+<script src="{{ '/assets/js/embeds.js' | url }}" defer></script>
+<script src="{{ '/assets/js/toc.js' | url }}" defer></script>
+<script src="{{ '/assets/js/suggest.js' | url }}" defer></script>
+</body>
+</html>

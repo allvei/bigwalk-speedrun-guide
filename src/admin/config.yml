@@ -1,0 +1,50 @@
+# Editor for maintainers (repo collaborators only).
+# Sveltia CMS commits straight to `branch` — no pull requests.
+# Set base_url to your deployed sveltia-cms-auth worker (see README) once you have one.
+backend:
+  name: github
+  repo: allvei/big-walk-compendium
+  branch: main
+  # base_url: https://your-auth-worker.workers.dev
+
+# Direct commits, not editorial workflow (which would open PRs).
+publish_mode: simple
+
+media_folder: src/assets/videos
+public_folder: /assets/videos
+
+collections:
+  - name: sections
+    label: Compendium sections
+    label_singular: Section
+    folder: src/content
+    create: true
+    format: frontmatter
+    extension: md
+    slug: "{{fields.order}}-{{slug}}"
+    sortable_fields: [order, title]
+    fields:
+      - { name: title, label: Title, widget: string }
+      - { name: order, label: Order, widget: number, value_type: int, min: 1 }
+      - { name: body, label: Content, widget: markdown }
+
+  - name: settings
+    label: Site settings
+    files:
+      - name: site
+        label: Site settings
+        file: src/_data/site.json
+        fields:
+          - { name: title, label: Title, widget: string }
+          - { name: description, label: Description, widget: text }
+          - { name: updated, label: "Updated (shown in header)", widget: string }
+          - { name: discordUrl, label: Discord invite, widget: string }
+          - { name: speedrunUrl, label: Speedrun.com page, widget: string }
+          - { name: repo, label: "GitHub repo (owner/name)", widget: string }
+          - { name: branch, label: Branch, widget: string }
+          - name: suggestions
+            label: Suggestions
+            widget: object
+            fields:
+              - { name: endpoint, label: "Form endpoint URL", widget: string, required: false }
+              - { name: fallbackIssues, label: "Offer GitHub issue fallback", widget: boolean }
