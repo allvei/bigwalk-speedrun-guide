@@ -27,7 +27,7 @@ npm run build      # output in _site/
    `.github/workflows/deploy.yml`.
 2. Check `src/_data/site.json`: `repo`, `branch`, `discordUrl`, `speedrunUrl`.
 3. Suggestion inbox: put an endpoint URL in `suggestions.endpoint` in `src/_data/site.json`.
-   - The Cloudflare Worker in `worker/` files each suggestion as an issue in this repo and is the
+   - The Cloudflare Worker in `worker/` (step-by-step guide: `worker/SETUP.md`) files each suggestion as an issue in this repo and is the
      only option that also accepts uploaded video files. `cd worker && wrangler deploy`, then
      `wrangler secret put GITHUB_TOKEN` (fine-grained PAT, Contents and Issues read+write on this
      repo only). Set `ALLOWED_ORIGINS` in `wrangler.toml` to the Pages URL.
