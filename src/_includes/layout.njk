@@ -15,9 +15,13 @@
     repo: {{ site.repo | dump | safe }},
     branch: {{ site.branch | dump | safe }},
     endpoint: {{ site.suggestions.endpoint | dump | safe }},
-    fallbackIssues: {{ site.suggestions.fallbackIssues | dump | safe }},
-    pathPrefix: {{ ('/' | url) | dump | safe }}
+    maxUploadMB: {{ site.suggestions.maxUploadMB | dump | safe }},
+    discordUrl: {{ site.discordUrl | dump | safe }}
   };
+  (function () {
+    var stored = localStorage.getItem("theme");
+    if (stored) document.documentElement.dataset.theme = stored;
+  })();
 </script>
 </head>
 <body>
@@ -34,7 +38,8 @@
       <a href="{{ site.discordUrl }}">Discord</a>
       <a href="{{ site.speedrunUrl }}">Leaderboards</a>
       <a href="https://github.com/{{ site.repo }}">Source</a>
-      <button type="button" class="btn primary" data-suggest-open data-kind="addition">Suggest something</button>
+      <button type="button" class="btn" data-suggest-open data-kind="addition">Suggest</button>
+      <button type="button" class="icon-btn" id="theme-toggle" aria-label="Switch theme" title="Switch theme"></button>
     </nav>
   </div>
 </header>
@@ -50,11 +55,12 @@
 
 <footer class="site-footer">
   <div class="wrap">
-    <p>Community-maintained. Anyone can <button type="button" class="linklike" data-suggest-open data-kind="addition">suggest an edit or addition</button> — no account required.</p>
-    <p><a href="https://github.com/{{ site.repo }}">Repository</a> · <a href="{{ '/admin/' | url }}">Editor (maintainers)</a></p>
+    <p>Select any text and right-click to suggest a change.</p>
+    <p><a href="https://github.com/{{ site.repo }}">Repository</a> · <a href="{{ '/admin/' | url }}">Editor</a></p>
   </div>
 </footer>
 
+<script src="{{ '/assets/js/theme.js' | url }}" defer></script>
 <script src="{{ '/assets/js/embeds.js' | url }}" defer></script>
 <script src="{{ '/assets/js/toc.js' | url }}" defer></script>
 <script src="{{ '/assets/js/suggest.js' | url }}" defer></script>

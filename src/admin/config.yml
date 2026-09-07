@@ -1,5 +1,5 @@
 # Editor for maintainers (repo collaborators only).
-# Sveltia CMS commits straight to `branch` — no pull requests.
+# Sveltia CMS commits straight to `branch` - no pull requests.
 # Set base_url to your deployed sveltia-cms-auth worker (see README) once you have one.
 backend:
   name: github

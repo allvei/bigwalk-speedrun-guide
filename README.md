@@ -2,14 +2,12 @@
 
 Static site (Eleventy) for the Big Walk speedrunning compendium, deployed to GitHub Pages.
 
-- **Content** lives in `src/content/*.md` — plain markdown, one file per top-level section.
-- **YouTube links** in that markdown become click-to-load players automatically.
-- **Discord links** become "open in Discord" cards, flagged when no mirror exists yet.
-- **Self-hosted clips** go in `src/assets/videos/` and are linked as `/assets/videos/<file>` — they
-  render as an inline `<video>` player. See `src/assets/videos/README.md`.
-- **Anyone** can suggest an edit from the site itself: every heading has a *suggest an edit*
-  button that pre-fills that section's markdown in a form. No GitHub account, no fork, no PR.
-- **Maintainers** edit at `/admin/` (Sveltia CMS), which commits straight to `main`.
+- Content lives in `src/content/*.md`, one file per top-level section.
+- YouTube links become click-to-load players.
+- Discord clip links stay plain links with an "Upload a copy" button so the clip can be re-hosted here.
+- Files in `src/assets/videos/` linked as `/assets/videos/<file>` render as inline `<video>` players.
+- Readers suggest changes by selecting text, right-clicking and choosing "Suggest". No GitHub account or PR.
+- Maintainers edit at `/admin/` (Sveltia CMS), which commits straight to `main`.
 
 ## Local development
 
@@ -21,27 +19,24 @@ npm run build      # output in _site/
 
 ## Setup checklist
 
-1. **Enable Pages**: repo Settings → Pages → Source: **GitHub Actions**. Pushing to `main`
-   then builds and deploys via `.github/workflows/deploy.yml`.
-2. **Point the site at this repo**: set `repo` and `branch` in `src/_data/site.json`
-   (also `discordUrl` and `speedrunUrl`, which are placeholders right now).
-3. **Suggestion inbox** — pick one and put its URL in `suggestions.endpoint` in
-   `src/_data/site.json`:
-   - [Formspree](https://formspree.io) — free tier, 50 submissions/month, emails you each one.
-     Create a form, use the `https://formspree.io/f/xxxx` endpoint. It accepts the JSON the
-     site posts.
-   - [Basin](https://usebasin.com) or [Web3Forms](https://web3forms.com) — same idea.
-   - The Cloudflare Worker in `worker/` — fully anonymous *and* every suggestion lands in this
-     repo as a labelled issue. `cd worker && wrangler deploy`, then
-     `wrangler secret put GITHUB_TOKEN` (fine-grained PAT, Issues read+write on this repo only).
+1. Enable Pages: Settings > Pages > Source: GitHub Actions. Pushes to `main` deploy via
+   `.github/workflows/deploy.yml`.
+2. Check `src/_data/site.json`: `repo`, `branch`, `discordUrl`, `speedrunUrl`.
+3. Suggestion inbox: put an endpoint URL in `suggestions.endpoint` in `src/_data/site.json`.
+   - The Cloudflare Worker in `worker/` files each suggestion as an issue in this repo and is the
+     only option that also accepts uploaded video files. `cd worker && wrangler deploy`, then
+     `wrangler secret put GITHUB_TOKEN` (fine-grained PAT, Contents and Issues read+write on this
+     repo only). Set `ALLOWED_ORIGINS` in `wrangler.toml` to the Pages URL.
+   - [Formspree](https://formspree.io), [Basin](https://usebasin.com) or
+     [Web3Forms](https://web3forms.com) also work for text-only suggestions.
 
-   The site posts JSON with `kind`, `section`, `body`, `media`, `author`, `page`, `source`.
+   The site posts JSON with `kind`, `section`, `body`, `media`, `author`, `page`, `source` and,
+   for uploads, `upload` (`name`, `type`, `size`, base64 `data`).
 
-   Until an endpoint is set, the form falls back to copy-to-clipboard plus a pre-filled
-   GitHub issue link.
-4. **Maintainer editor** (`/admin/`): GitHub OAuth needs a tiny auth broker because Pages is
-   static. Deploy [sveltia-cms-auth](https://github.com/sveltia/sveltia-cms-auth) (one click,
-   free Cloudflare Worker), create a GitHub OAuth app pointing at it, then set `base_url` in
-   `src/admin/config.yml` to the worker URL. Only users with write access to the repo can save.
-   Without it, maintainers can still edit the markdown files directly on GitHub.
-5. **Custom domain** (optional): add `src/CNAME` containing the domain.
+   Until an endpoint is set, the form tells people to post in Discord instead and the upload
+   field is disabled.
+4. Maintainer editor (`/admin/`): GitHub OAuth needs an auth broker because Pages is static.
+   Deploy [sveltia-cms-auth](https://github.com/sveltia/sveltia-cms-auth), create a GitHub OAuth
+   app pointing at it, then set `base_url` in `src/admin/config.yml` to the worker URL. Only users
+   with write access can save. Without it, maintainers can still edit the markdown on GitHub.
+5. Custom domain (optional): add `src/CNAME` containing the domain.

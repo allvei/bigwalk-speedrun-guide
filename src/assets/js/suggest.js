@@ -1,119 +1,105 @@
 /**
- * Anonymous suggestions.
+ * Suggestions: select text, right-click, pick "Suggest". The selected text is
+ * pre-filled so anyone can rewrite it. Video files can be attached so Discord
+ * clips can be re-hosted here.
  *
- * Every heading gets a "suggest an edit" button. The modal pre-fills the exact
- * markdown for that heading (fetched from the repo's raw source) so anyone can
- * rewrite it in place — no GitHub account, no fork, no pull request.
- *
- * Submissions are POSTed as JSON to SITE_CONFIG.endpoint (a form service such as
- * Formspree/Tally/Basin, or your own worker). If no endpoint is configured the
- * modal falls back to copy-to-clipboard + a pre-filled GitHub issue link.
+ * Submissions POST as JSON to SITE_CONFIG.endpoint (see worker/ in the repo).
  */
 (function () {
   const cfg = window.SITE_CONFIG || {};
-  const rawBase = `https://raw.githubusercontent.com/${cfg.repo}/${cfg.branch}/src/`;
-  const sourceCache = new Map();
+  const maxUploadBytes = (cfg.maxUploadMB || 25) * 1024 * 1024;
 
   const KINDS = [
-    ["edit", "Edit to an existing section"],
-    ["addition", "New glitch / strat / tech"],
-    ["media", "New or replacement video"],
+    ["edit", "Edit to existing text"],
+    ["addition", "New glitch, strat or tech"],
+    ["media", "Video"],
     ["correction", "Correction (credit, name, link)"],
-    ["other", "Something else"],
+    ["other", "Other"],
   ];
 
-  function fetchSource(path) {
-    if (!sourceCache.has(path)) {
-      sourceCache.set(
-        path,
-        fetch(rawBase + path)
-          .then((r) => (r.ok ? r.text() : ""))
-          .catch(() => "")
-      );
+  function headingFor(node) {
+    if (!node) return null;
+    let el = node instanceof Element ? node : node.parentElement;
+    while (el && el !== document.body) {
+      let sibling = el.previousElementSibling;
+      while (sibling) {
+        if (/^H[2-4]$/.test(sibling.tagName)) return sibling;
+        const nested = sibling.querySelector && sibling.querySelector("h2, h3, h4");
+        if (nested) return nested;
+        sibling = sibling.previousElementSibling;
+      }
+      el = el.parentElement;
     }
-    return sourceCache.get(path);
+    return document.querySelector("#main h2");
   }
 
   function headingText(h) {
-    return h.textContent.replace(/\s*#\s*$/, "").trim();
+    return h ? h.textContent.replace(/\s*#\s*$/, "").trim() : "Whole page";
   }
 
-  /** Slice the markdown block belonging to `heading` (down to the next same-or-higher heading). */
-  function sliceSection(markdown, heading) {
-    if (!markdown) return "";
-    const level = Number(heading.tagName[1]);
-    const text = headingText(heading);
-    const lines = markdown.split("\n");
-    const start = lines.findIndex(
-      (line) =>
-        /^#{2,6}\s/.test(line) &&
-        line.replace(/^#+\s*/, "").replace(/[*_`]/g, "").trim() === text.replace(/[*_`]/g, "").trim()
-    );
-    if (start === -1) return markdown.replace(/^---[\s\S]*?---\n/, "").trim();
-    let end = lines.length;
-    for (let i = start + 1; i < lines.length; i++) {
-      const m = /^(#{2,6})\s/.exec(lines[i]);
-      if (m && m[1].length <= level) {
-        end = i;
-        break;
-      }
-    }
-    return lines.slice(start, end).join("\n").trim();
+  function sourceFor(node) {
+    const el = node instanceof Element ? node : node && node.parentElement;
+    const section = el && el.closest(".doc-section");
+    return section ? section.dataset.source : "";
   }
 
-  function buildModal() {
-    const backdrop = document.createElement("div");
-    backdrop.className = "modal-backdrop";
-    backdrop.hidden = true;
-    backdrop.innerHTML = `
-      <form class="modal" method="dialog">
-        <h2>Suggest a change</h2>
-        <p class="hint">No account needed. Suggestions are reviewed by the maintainers before they go live.</p>
+  /* ---------- modal ---------- */
 
-        <label for="sg-kind">What is this?</label>
-        <select id="sg-kind" name="kind">
-          ${KINDS.map(([v, l]) => `<option value="${v}">${l}</option>`).join("")}
-        </select>
+  const backdrop = document.createElement("div");
+  backdrop.className = "modal-backdrop";
+  backdrop.hidden = true;
+  backdrop.innerHTML = `
+    <form class="modal">
+      <h2>Suggest a change</h2>
+      <p class="section-line">Section: <strong data-section-label></strong></p>
 
-        <label for="sg-section">Section</label>
-        <input id="sg-section" name="section" readonly>
+      <label for="sg-kind">Type <abbr title="required">*</abbr></label>
+      <select id="sg-kind" name="kind">
+        ${KINDS.map(([v, l]) => `<option value="${v}">${l}</option>`).join("")}
+      </select>
 
-        <label for="sg-body">Your suggestion <span class="hint">— edit the markdown below, or just describe the change</span></label>
-        <textarea id="sg-body" name="body" required></textarea>
+      <label for="sg-body">Suggestion <abbr title="required">*</abbr></label>
+      <textarea id="sg-body" name="body" required></textarea>
 
-        <label for="sg-media">Video link (YouTube, Discord, or a direct file we can mirror) — optional</label>
-        <input id="sg-media" name="media" type="url" placeholder="https://">
+      <label for="sg-media">Video link</label>
+      <input id="sg-media" name="media" type="url" placeholder="https://">
 
-        <label for="sg-author">Your name / handle for credit — optional</label>
-        <input id="sg-author" name="author" placeholder="Anonymous">
+      <label for="sg-file">Video file <span class="hint" data-upload-hint></span></label>
+      <input id="sg-file" name="file" type="file" accept="video/*">
 
-        <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" style="display:none" aria-hidden="true">
-        <input type="hidden" name="page">
-        <input type="hidden" name="source">
+      <label for="sg-author">Name or handle for credit</label>
+      <input id="sg-author" name="author" placeholder="Anonymous">
 
-        <div class="modal-actions">
-          <button type="button" class="btn" data-suggest-close>Cancel</button>
-          <button type="button" class="btn" data-suggest-copy>Copy text</button>
-          <button type="submit" class="btn primary">Send suggestion</button>
-        </div>
-        <p class="status" role="status"></p>
-      </form>`;
-    document.body.appendChild(backdrop);
-    return backdrop;
-  }
+      <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" style="display:none" aria-hidden="true">
+      <input type="hidden" name="page">
+      <input type="hidden" name="source">
+      <input type="hidden" name="section">
 
-  const backdrop = buildModal();
+      <div class="modal-actions">
+        <button type="button" class="btn" data-suggest-close>Cancel</button>
+        <button type="submit" class="btn primary">Send</button>
+      </div>
+      <p class="status" role="status"></p>
+    </form>`;
+  document.body.appendChild(backdrop);
+
   const form = backdrop.querySelector("form");
   const status = backdrop.querySelector(".status");
+  const sectionLabel = backdrop.querySelector("[data-section-label]");
+  const uploadHint = backdrop.querySelector("[data-upload-hint]");
   const fields = {
     kind: form.querySelector("#sg-kind"),
-    section: form.querySelector("#sg-section"),
     body: form.querySelector("#sg-body"),
     media: form.querySelector("#sg-media"),
+    file: form.querySelector("#sg-file"),
     author: form.querySelector("#sg-author"),
     page: form.querySelector('input[name="page"]'),
     source: form.querySelector('input[name="source"]'),
+    section: form.querySelector('input[name="section"]'),
   };
+  uploadHint.textContent = cfg.endpoint ? `(up to ${cfg.maxUploadMB} MB)` : "(uploads not enabled yet)";
+  fields.file.disabled = !cfg.endpoint;
+
   let lastFocused = null;
 
   function close() {
@@ -123,55 +109,81 @@
   }
 
   function open(opts) {
+    const heading = opts.heading || headingFor(opts.node);
     lastFocused = document.activeElement;
     status.textContent = "";
     status.className = "status";
-    const kind = KINDS.some(([v]) => v === opts.kind) ? opts.kind : "addition";
-    fields.kind.value = kind;
-    fields.section.value = opts.section || "Whole page";
-    fields.media.value = "";
-    fields.author.value = "";
-    fields.page.value = window.location.href;
-    fields.source.value = opts.source || "";
+    form.reset();
+    fields.kind.value = KINDS.some(([v]) => v === opts.kind) ? opts.kind : "addition";
+    fields.section.value = headingText(heading);
+    sectionLabel.textContent = fields.section.value;
+    fields.page.value = heading && heading.id ? location.origin + location.pathname + "#" + heading.id : location.href;
+    fields.source.value = opts.source || sourceFor(opts.node) || "";
     fields.body.value = opts.body || "";
+    fields.media.value = opts.mediaUrl || "";
     fields.body.placeholder =
-      kind === "edit"
-        ? "Rewrite this section as you think it should read."
-        : "Describe the glitch/strat, where it is done, who found it, and link a video.";
+      opts.kind === "media"
+        ? "Anything worth knowing about the clip: who recorded it, what it shows."
+        : "What should it say instead?";
     backdrop.hidden = false;
     document.body.style.overflow = "hidden";
-    fields.body.focus();
+    (opts.wantsFile && !fields.file.disabled ? fields.file : fields.body).focus();
   }
 
-  function issueUrl() {
-    const title = `[${fields.kind.value}] ${fields.section.value}`;
-    const body = [
-      `**Section:** ${fields.section.value}`,
-      fields.source.value ? `**Source file:** \`src/${fields.source.value}\`` : "",
-      fields.media.value ? `**Media:** ${fields.media.value}` : "",
-      fields.author.value ? `**Credit:** ${fields.author.value}` : "",
-      "",
-      fields.body.value,
-    ]
-      .filter(Boolean)
-      .join("\n");
-    return `https://github.com/${cfg.repo}/issues/new?title=${encodeURIComponent(
-      title
-    )}&body=${encodeURIComponent(body)}`;
+  function readFile(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Could not read that file"));
+      reader.onload = () =>
+        resolve({
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          data: String(reader.result).split(",")[1],
+        });
+      reader.readAsDataURL(file);
+    });
   }
 
   form.addEventListener("submit", async function (event) {
     event.preventDefault();
     if (!fields.body.value.trim()) return;
-    const payload = Object.fromEntries(new FormData(form).entries());
-    payload.submittedAt = new Date().toISOString();
+
+    const payload = {
+      kind: fields.kind.value,
+      section: fields.section.value,
+      body: fields.body.value,
+      media: fields.media.value,
+      author: fields.author.value,
+      page: fields.page.value,
+      source: fields.source.value,
+      _gotcha: form.querySelector('input[name="_gotcha"]').value,
+      submittedAt: new Date().toISOString(),
+    };
 
     if (!cfg.endpoint) {
       status.className = "status error";
       status.innerHTML =
-        'No suggestion inbox is configured yet. Copy your text and ' +
-        `<a href="${issueUrl()}" target="_blank" rel="noopener">open an issue</a> or paste it in the Discord.`;
+        'Sending is not set up yet. Post it in <a href="' + cfg.discordUrl + '" target="_blank" rel="noopener">Discord</a> for now.';
       return;
+    }
+
+    const file = fields.file.files && fields.file.files[0];
+    if (file) {
+      if (file.size > maxUploadBytes) {
+        status.className = "status error";
+        status.textContent = `That file is ${(file.size / 1048576).toFixed(1)} MB, the limit is ${cfg.maxUploadMB} MB.`;
+        return;
+      }
+      status.className = "status";
+      status.textContent = "Uploading…";
+      try {
+        payload.upload = await readFile(file);
+      } catch (error) {
+        status.className = "status error";
+        status.textContent = error.message;
+        return;
+      }
     }
 
     status.className = "status";
@@ -184,25 +196,13 @@
       });
       if (!response.ok) throw new Error("HTTP " + response.status);
       status.className = "status ok";
-      status.textContent = "Thanks! Your suggestion was sent to the maintainers.";
-      setTimeout(close, 1800);
+      status.textContent = "Sent. Thanks.";
+      setTimeout(close, 1500);
     } catch (error) {
       status.className = "status error";
       status.innerHTML =
-        "Could not send that (" +
-        error.message +
-        "). Copy your text and " +
-        `<a href="${issueUrl()}" target="_blank" rel="noopener">open an issue</a> instead.`;
-    }
-  });
-
-  form.querySelector("[data-suggest-copy]").addEventListener("click", async function () {
-    try {
-      await navigator.clipboard.writeText(fields.body.value);
-      status.className = "status ok";
-      status.textContent = "Copied to clipboard.";
-    } catch (_) {
-      fields.body.select();
+        "That did not go through (" + error.message + '). Try again, or post it in <a href="' +
+        cfg.discordUrl + '" target="_blank" rel="noopener">Discord</a>.';
     }
   });
 
@@ -213,30 +213,48 @@
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !backdrop.hidden) close();
   });
+  window.addEventListener("suggest:open", (e) => open(e.detail || {}));
+
+  /* ---------- right-click menu on a selection ---------- */
+
+  const menu = document.createElement("div");
+  menu.className = "context-menu";
+  menu.hidden = true;
+  menu.innerHTML = '<button type="button">Suggest</button>';
+  document.body.appendChild(menu);
+
+  function hideMenu() {
+    menu.hidden = true;
+  }
+
+  document.addEventListener("contextmenu", function (event) {
+    const main = document.getElementById("main");
+    const selection = window.getSelection();
+    const text = selection ? selection.toString().trim() : "";
+    if (!main || !text || !main.contains(event.target)) return hideMenu();
+
+    event.preventDefault();
+    const node = selection.anchorNode;
+    menu.hidden = false;
+    const width = menu.offsetWidth;
+    const height = menu.offsetHeight;
+    menu.style.left = Math.min(event.clientX, window.innerWidth - width - 8) + window.scrollX + "px";
+    menu.style.top = Math.min(event.clientY, window.innerHeight - height - 8) + window.scrollY + "px";
+    menu.firstChild.onclick = function () {
+      hideMenu();
+      open({ kind: "edit", node: node, body: text });
+    };
+  });
+
+  document.addEventListener("click", hideMenu);
+  document.addEventListener("scroll", hideMenu, { passive: true });
+  document.addEventListener("keydown", (e) => e.key === "Escape" && hideMenu());
 
   document.addEventListener("DOMContentLoaded", function () {
-    document.querySelectorAll("[data-suggest-open]").forEach((btn) => {
-      btn.addEventListener("click", () => open({ kind: btn.dataset.kind || "addition" }));
-    });
-
-    const main = document.getElementById("main");
-    if (!main) return;
-
-    main.querySelectorAll("h2, h3, h4").forEach((heading) => {
-      const section = heading.closest(".doc-section");
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "btn suggest-heading-btn";
-      button.textContent = "suggest an edit";
-      button.setAttribute("aria-label", "Suggest an edit to " + headingText(heading));
-      button.addEventListener("click", async function () {
-        const source = section ? section.dataset.source : "";
-        open({ kind: "edit", section: headingText(heading), source: source, body: "Loading current text…" });
-        const markdown = source ? await fetchSource(source) : "";
-        fields.body.value =
-          sliceSection(markdown, heading) || "## " + headingText(heading) + "\n\n";
-      });
-      heading.appendChild(button);
+    document.querySelectorAll("[data-suggest-open]").forEach((button) => {
+      button.addEventListener("click", () =>
+        open({ kind: button.dataset.kind || "addition", heading: null, node: null })
+      );
     });
   });
 })();

@@ -4,6 +4,8 @@ compatibility_date = "2025-06-01"
 
 [vars]
 REPO = "allvei/big-walk-compendium"
+BRANCH = "main"
+UPLOAD_BRANCH = "suggestions"
 ALLOWED_ORIGINS = "https://allvei.github.io"
 
 # Secret (not stored here):

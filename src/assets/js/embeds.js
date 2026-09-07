@@ -1,9 +1,8 @@
 /**
- * Turns plain links in the compendium into players/cards:
- *   - YouTube links  -> click-to-load privacy-friendly iframe (keeps ?t= timestamps)
- *   - Video files    -> self-hosted <video> player (assets/videos/*.mp4|webm|mov)
- *   - Discord links  -> "open in Discord" card, flagged when no local mirror exists yet
- * Markdown stays plain: authors just paste a URL.
+ * Turns links in the compendium into players:
+ *   YouTube  -> click-to-load iframe, keeping ?t= timestamps
+ *   Video files (/assets/videos/*) -> inline <video>
+ *   Discord  -> stays a plain link, with a button to upload a copy we can host
  */
 (function () {
   const VIDEO_EXT = /\.(mp4|webm|mov|m4v)(\?.*)?$/i;
@@ -25,33 +24,26 @@
     return { id, start };
   }
 
-  function el(tag, className, attrs) {
+  function el(tag, className, props) {
     const node = document.createElement(tag);
     if (className) node.className = className;
-    Object.assign(node, attrs || {});
+    Object.assign(node, props || {});
     return node;
   }
 
-  function meta(label, badgeClass, href, hrefLabel) {
-    const bar = el("div", "media-meta");
-    bar.appendChild(el("span", "badge " + badgeClass, { textContent: label }));
-    const link = el("a", null, { href: href, textContent: hrefLabel, rel: "noopener" });
-    link.target = "_blank";
-    bar.appendChild(link);
-    return bar;
-  }
-
-  function youtubeCard(info, href, title) {
+  function youtubeCard(info, title) {
     const card = el("figure", "media");
     const frame = el("div", "media-frame");
-    const thumb = el("img", "media-thumb", {
-      src: `https://i.ytimg.com/vi/${info.id}/hqdefault.jpg`,
-      alt: title || "Video thumbnail",
-      loading: "lazy",
-    });
+    frame.append(
+      el("img", "media-thumb", {
+        src: `https://i.ytimg.com/vi/${info.id}/hqdefault.jpg`,
+        alt: title || "Video thumbnail",
+        loading: "lazy",
+      })
+    );
     const play = el("button", "media-play", { type: "button" });
     play.setAttribute("aria-label", "Play video" + (title ? ": " + title : ""));
-    play.appendChild(el("span"));
+    play.append(el("span", "play-icon"));
     play.addEventListener("click", function () {
       const iframe = el("iframe", null, {
         src:
@@ -63,42 +55,33 @@
       iframe.allowFullscreen = true;
       frame.replaceChildren(iframe);
     });
-    frame.append(thumb, play);
-    card.append(frame, meta("YouTube", "youtube", href, "Watch on YouTube"));
+    frame.append(play);
+    card.append(frame);
     return card;
   }
 
-  function videoCard(href, title) {
+  function videoCard(href) {
     const card = el("figure", "media");
     const frame = el("div", "media-frame");
-    const video = el("video", null, { controls: true, preload: "metadata", playsInline: true });
+    const video = el("video", null, { controls: true, preload: "metadata", src: href });
     video.setAttribute("playsinline", "");
-    video.src = href;
-    frame.appendChild(video);
-    card.append(frame, meta("Hosted here", "local", href, "Open file"));
-    if (title) card.appendChild(el("figcaption", "sr-only", { textContent: title }));
+    frame.append(video);
+    card.append(frame);
     return card;
   }
 
-  function discordCard(href, mirrored) {
-    const card = el("figure", "media discord-link");
-    const body = el("div", "media-body");
-    const text = el("p", null, {
-      textContent: mirrored
-        ? "Original clip posted in the Big Walk Discord."
-        : "This clip lives in the Big Walk Discord and cannot be embedded. A mirror can be hosted on this site — suggest one below.",
+  function uploadButton(discordUrl, block) {
+    const button = el("button", "btn tiny upload-btn", { type: "button" });
+    button.textContent = "Upload a copy";
+    button.title = "Send us the video file so it can be hosted here instead";
+    button.addEventListener("click", function () {
+      window.dispatchEvent(
+        new CustomEvent("suggest:open", {
+          detail: { kind: "media", node: block, mediaUrl: discordUrl, wantsFile: true },
+        })
+      );
     });
-    const link = el("a", "btn", { href: href, textContent: "Open in Discord", rel: "noopener" });
-    link.target = "_blank";
-    body.append(text, link);
-    const bar = el("div", "media-meta");
-    bar.appendChild(el("span", "badge discord", { textContent: "Discord" }));
-    card.append(bar, body);
-    return card;
-  }
-
-  function shortLabel(url) {
-    return url.hostname.replace(/^www\./, "") + (url.pathname === "/" ? "" : url.pathname);
+    return button;
   }
 
   function enhance(root) {
@@ -113,30 +96,42 @@
       } catch (_) {
         return;
       }
+      if (url.origin !== window.location.origin) {
+        a.target = "_blank";
+        a.rel = "noopener";
+      }
+
       const block = a.closest("p, li") || a;
       const title = (block.textContent || "").trim().replace(/\s+/g, " ").slice(0, 120);
-      let card = null;
-
       const yt = youtubeInfo(url);
-      if (yt) {
-        card = youtubeCard(yt, a.href, title);
-      } else if (VIDEO_EXT.test(url.pathname)) {
-        card = videoCard(a.href, title);
-      } else if (/(^|\.)discord\.com$/.test(url.hostname) && url.pathname.startsWith("/channels/")) {
-        const mirrored = !!block.querySelector('a[href$=".mp4"], a[href$=".webm"]');
-        card = discordCard(a.href, mirrored);
-      }
-      if (!card) return;
 
-      a.textContent = shortLabel(url);
-      a.target = "_blank";
-      a.rel = "noopener";
-      block.insertAdjacentElement("afterend", card);
+      if (yt) {
+        a.textContent = "youtube.com";
+        block.insertAdjacentElement("afterend", youtubeCard(yt, title));
+      } else if (VIDEO_EXT.test(url.pathname)) {
+        a.textContent = "video";
+        block.insertAdjacentElement("afterend", videoCard(a.href));
+      } else if (/(^|\.)discord\.com$/.test(url.hostname) && url.pathname.startsWith("/channels/")) {
+        a.textContent = "clip in Discord";
+        a.classList.add("discord-link");
+        if (!block.querySelector(".upload-btn")) {
+          a.insertAdjacentText("afterend", " ");
+          a.insertAdjacentElement("afterend", uploadButton(a.href, block));
+        }
+      }
     });
   }
 
   document.addEventListener("DOMContentLoaded", function () {
     const main = document.getElementById("main");
     if (main) enhance(main);
+    document.querySelectorAll(".site-header a, .site-footer a").forEach((a) => {
+      try {
+        if (new URL(a.href).origin !== window.location.origin) {
+          a.target = "_blank";
+          a.rel = "noopener";
+        }
+      } catch (_) {}
+    });
   });
 })();

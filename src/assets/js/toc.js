@@ -1,4 +1,6 @@
 (function () {
+  const HEADER_OFFSET = 96;
+
   document.addEventListener("DOMContentLoaded", function () {
     const nav = document.getElementById("toc-nav");
     const main = document.getElementById("main");
@@ -8,7 +10,7 @@
     if (!headings.length) return;
 
     const list = document.createElement("ul");
-    headings.forEach((h) => {
+    const links = headings.map((h) => {
       const li = document.createElement("li");
       li.className = "lvl-" + h.tagName[1];
       const a = document.createElement("a");
@@ -16,24 +18,56 @@
       a.textContent = h.textContent.replace(/\s*#\s*$/, "").trim();
       li.appendChild(a);
       list.appendChild(li);
+      return a;
     });
     nav.appendChild(list);
 
-    const links = new Map(headings.map((h, i) => [h.id, list.children[i].firstChild]));
-    let current = null;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
-          const link = links.get(entry.target.id);
-          if (!link || link === current) return;
-          if (current) current.classList.remove("is-active");
-          link.classList.add("is-active");
-          current = link;
-        });
-      },
-      { rootMargin: "-88px 0px -70% 0px" }
-    );
-    headings.forEach((h) => observer.observe(h));
+    let active = null;
+    function highlight() {
+      let index = 0;
+      for (let i = 0; i < headings.length; i++) {
+        if (headings[i].getBoundingClientRect().top - HEADER_OFFSET <= 1) index = i;
+        else break;
+      }
+      const link = links[index];
+      if (link === active) return;
+      if (active) active.classList.remove("is-active");
+      link.classList.add("is-active");
+      active = link;
+      const box = nav.parentElement.getBoundingClientRect();
+      const spot = link.getBoundingClientRect();
+      if (spot.top < box.top || spot.bottom > box.bottom) {
+        link.scrollIntoView({ block: "nearest" });
+      }
+    }
+
+    /* Let the last heading reach the top of the viewport, but no further. */
+    function padTail() {
+      main.style.paddingBottom = "0px";
+      const last = headings[headings.length - 1];
+      const lastTop = last.getBoundingClientRect().top + window.scrollY;
+      const wanted = lastTop - HEADER_OFFSET + window.innerHeight;
+      main.style.paddingBottom =
+        Math.max(0, Math.round(wanted - document.documentElement.scrollHeight)) + "px";
+    }
+
+    let queued = false;
+    function onScroll() {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(function () {
+        queued = false;
+        highlight();
+      });
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", function () {
+      padTail();
+      highlight();
+    });
+    window.addEventListener("load", padTail);
+    padTail();
+    highlight();
   });
 })();

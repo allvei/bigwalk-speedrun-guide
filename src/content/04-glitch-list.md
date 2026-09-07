@@ -131,9 +131,9 @@ Perfectly Aligning Atoms in Big Walk | Glitch Showcase
 
 #### Unsure How to Categorize
 
-**Dori's reverse item climbing:** https://discord.com/channels/1535292250437976105/1535292252115566674/1536887085569675336 — is this item flying or item climbing?
+**Dori's reverse item climbing:** https://discord.com/channels/1535292250437976105/1535292252115566674/1536887085569675336 - is this item flying or item climbing?
 
-**Item jump by Dori:** https://discord.com/channels/1535292250437976105/1535292252115566674/1537020425035448400 — maybe we can limit item flying but allow item single jumps.
+**Item jump by Dori:** https://discord.com/channels/1535292250437976105/1535292252115566674/1537020425035448400 - maybe we can limit item flying but allow item single jumps.
 
 #### Turnstile Headless Chicken Hat Grab
 
