@@ -5,16 +5,28 @@
   const GAP = 8;
   const MIN_THUMB = 40;
 
-  /* Any scrolling box fades out where its content continues past an edge. */
+  /* Any scrolling box fades out where its content continues past an edge. The gradients are
+     sticky children rather than a mask on the box itself, which would fade its scrollbar with
+     the content. */
   window.watchScrollFade = function (el) {
     el.classList.add("scroll-fade");
+    const top = document.createElement("div");
+    top.className = "fade-edge at-top";
+    const bottom = document.createElement("div");
+    bottom.className = "fade-edge at-bottom";
+
     function fade() {
+      /* Boxes whose content is replaced wholesale, like a thread, lose the edges or leave them
+         stranded mid-list, so they are put back at the rim on every pass. */
+      if (el.firstChild !== top) el.insertBefore(top, el.firstChild);
+      if (el.lastChild !== bottom) el.appendChild(bottom);
       el.classList.toggle("has-more", el.scrollTop + el.clientHeight < el.scrollHeight - 2);
       el.classList.toggle("has-above", el.scrollTop > 2);
     }
     el.addEventListener("scroll", fade, { passive: true });
     window.addEventListener("resize", fade);
     if (window.ResizeObserver) new ResizeObserver(fade).observe(el);
+    if (window.MutationObserver) new MutationObserver(fade).observe(el, { childList: true });
     fade();
     return fade;
   };
@@ -98,6 +110,28 @@
       const above = spot < thumb.getBoundingClientRect().top - bar.getBoundingClientRect().top;
       window.scrollBy({ top: above ? -window.innerHeight : window.innerHeight, behavior: "smooth" });
     });
+
+    /* The article scrolls with the window, so its fades sit between the sticky header and
+       footer instead of inside a box. */
+    const fades = ["at-top", "at-bottom"].map(function (where) {
+      const edge = document.createElement("div");
+      edge.className = "page-fade " + where;
+      document.body.appendChild(edge);
+      return edge;
+    });
+
+    function pageFades() {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      fades[0].style.top = (header ? header.offsetHeight : 0) + "px";
+      fades[1].style.bottom = (footer ? footer.offsetHeight : 0) + "px";
+      fades[0].classList.toggle("is-on", window.scrollY > 2);
+      fades[1].classList.toggle("is-on", max > 2 && window.scrollY < max - 2);
+    }
+
+    window.addEventListener("scroll", pageFades, { passive: true });
+    window.addEventListener("resize", pageFades);
+    window.addEventListener("load", pageFades);
+    pageFades();
 
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule);

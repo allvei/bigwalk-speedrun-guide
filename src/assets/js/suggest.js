@@ -461,8 +461,13 @@
     const width = longest > 90 ? Math.min(1100, 680 + (longest - 90) * 6) : 680;
     form.style.setProperty("--modal-w", width + "px");
     /* The highlight layer holds the same text at the same metrics, so its content height is
-       the target without having to reset the textarea to auto and break the transition. */
-    area.style.height = Math.max(highlight.scrollHeight, 120) + "px";
+       the target without having to reset the textarea to auto and break the transition. It is
+       stretched to the box, though, so it has to be let go of its bottom edge while measured or
+       it can only ever report the height the box already has and deleted lines leave dead space. */
+    highlight.style.bottom = "auto";
+    const target = Math.max(highlight.offsetHeight, 120);
+    highlight.style.bottom = "";
+    area.style.height = target + "px";
   }
   fields.body.addEventListener("input", grow);
 
