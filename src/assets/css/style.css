@@ -577,10 +577,15 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 .diff { margin: 8px 0 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; font-size: .85rem; }
 .diff-line { padding: 3px 10px 3px 22px; position: relative; white-space: pre-wrap; word-break: break-word; }
 .diff-line::before { position: absolute; left: 8px; color: var(--muted); }
+.diff-line.ctx { color: var(--muted); }
+.diff-line.ctx::before { content: " "; }
 .diff-line.del { background: color-mix(in srgb, #d73a49 18%, transparent); }
 .diff-line.del::before { content: "-"; }
 .diff-line.add { background: color-mix(in srgb, #2ea043 20%, transparent); }
 .diff-line.add::before { content: "+"; }
+/* The changed span inside a paired line gets a stronger shade than the line itself. */
+.diff-line.del .diff-hl { background: color-mix(in srgb, #d73a49 45%, transparent); border-radius: 3px; }
+.diff-line.add .diff-hl { background: color-mix(in srgb, #2ea043 45%, transparent); border-radius: 3px; }
 
 .thread-text { margin: 8px 0 0; font-size: .9rem; }
 .thread-meta {

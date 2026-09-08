@@ -89,18 +89,96 @@
     return { meta, diff, text: text.join("\n").trim() };
   }
 
+  /* Aligns before/after the way a real diff does: identical lines pass through as context,
+     changed lines interleave so a removal sits directly above its replacement. A simple LCS
+     walk, biased so deletions come before their insertions within a hunk. */
+  function alignDiff(before, after) {
+    const n = before.length;
+    const m = after.length;
+    const dp = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+    for (let i = n - 1; i >= 0; i--) {
+      for (let j = m - 1; j >= 0; j--) {
+        dp[i][j] =
+          before[i] === after[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+      }
+    }
+    const ops = [];
+    let i = 0;
+    let j = 0;
+    while (i < n && j < m) {
+      if (before[i] === after[j]) {
+        ops.push(["ctx", before[i]]);
+        i++;
+        j++;
+      } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+        ops.push(["del", before[i]]);
+        i++;
+      } else {
+        ops.push(["add", after[j]]);
+        j++;
+      }
+    }
+    while (i < n) ops.push(["del", before[i++]]);
+    while (j < m) ops.push(["add", after[j++]]);
+    return ops;
+  }
+
+  /* Within a del/add pair only the part that actually changed gets the stronger shade. Words,
+     not characters: splitting mid-word produces misleading highlights, so shared leading and
+     trailing word/punctuation runs stay plain and everything between is highlighted. */
+  function diffSlice(mine, other) {
+    mine = mine || " ";
+    if (other == null) return inlineMarkdown(mine);
+    const a = mine.match(/\w+|\W+/g) || [mine];
+    const b = other.match(/\w+|\W+/g) || [other];
+    let pre = 0;
+    while (pre < a.length && pre < b.length && a[pre] === b[pre]) pre++;
+    let suf = 0;
+    while (
+      suf < a.length - pre &&
+      suf < b.length - pre &&
+      a[a.length - 1 - suf] === b[b.length - 1 - suf]
+    ) {
+      suf++;
+    }
+    const head = a.slice(0, pre).join("");
+    const mid = a.slice(pre, a.length - suf).join("");
+    const tail = suf ? a.slice(-suf).join("") : "";
+    return (
+      inlineMarkdown(head) +
+      (mid ? '<span class="diff-hl">' + inlineMarkdown(mid) + "</span>" : "") +
+      inlineMarkdown(tail)
+    );
+  }
+
   function diffBlock(diff) {
     const wrap = document.createElement("div");
     wrap.className = "diff";
-    diff.before.forEach((line) => wrap.append(diffLine("del", line)));
-    diff.after.forEach((line) => wrap.append(diffLine("add", line)));
+    const ops = alignDiff(diff.before, diff.after);
+    for (let i = 0; i < ops.length; i++) {
+      if (ops[i][0] === "ctx") {
+        wrap.append(diffLine("ctx", ops[i][1]));
+        continue;
+      }
+      /* A hunk is a run of removals followed by a run of insertions; pair them positionally
+         so each old line sits above its new version. */
+      const dels = [];
+      const adds = [];
+      while (i < ops.length && ops[i][0] === "del") dels.push(ops[i++][1]);
+      while (i < ops.length && ops[i][0] === "add") adds.push(ops[i++][1]);
+      i--;
+      for (let k = 0; k < Math.max(dels.length, adds.length); k++) {
+        if (k < dels.length) wrap.append(diffLine("del", dels[k], adds[k]));
+        if (k < adds.length) wrap.append(diffLine("add", adds[k], dels[k]));
+      }
+    }
     return wrap;
   }
 
-  function diffLine(kind, line) {
+  function diffLine(kind, line, other) {
     const el = document.createElement("div");
     el.className = "diff-line " + kind;
-    el.innerHTML = inlineMarkdown(line || " ");
+    el.innerHTML = diffSlice(line, other);
     return el;
   }
 
