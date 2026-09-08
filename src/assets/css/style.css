@@ -258,6 +258,10 @@ main h2:first-child { margin-top: 0; }
 main img { max-width: 100%; height: auto; border-radius: var(--radius); border: 1px solid var(--border); }
 main figure { margin: 1.25rem 0; }
 main figure img { display: block; }
+/* In full-width mode the container is much wider than the text, so a figure fills the whole
+   row and dwarfs everything around it. Capped at half the container, the art stays a feature
+   rather than the whole page. */
+html[data-width="full"] main figure img { max-width: 50%; }
 main figcaption {
   margin-top: .5rem; font-size: .82rem; color: var(--muted); font-style: italic; line-height: 1.45;
 }
