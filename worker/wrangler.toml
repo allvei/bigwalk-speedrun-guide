@@ -1,4 +1,4 @@
-name = "big-walk-suggestions"
+name = "suggest"
 main = "index.js"
 compatibility_date = "2025-06-01"
 
@@ -6,5 +6,5 @@ compatibility_date = "2025-06-01"
 REPO = "allvei/bigwalk-speedrun-guide"
 BRANCH = "main"
 UPLOAD_BRANCH = "suggestions"
-ALLOWED_ORIGINS = "https://allvei.github.io,https://bigwalk-speedrun-guide.mark-veiermann.workers.dev"
+ALLOWED_ORIGINS = "https://allvei.github.io,https://guide.bigwalk.workers.dev"
 GITHUB_CLIENT_ID = "Ov23likbfD99J8sbGlXi"

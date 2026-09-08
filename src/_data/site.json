@@ -7,7 +7,7 @@
   "repo": "allvei/bigwalk-speedrun-guide",
   "branch": "main",
   "suggestions": {
-    "endpoint": "https://big-walk-suggestions.mark-veiermann.workers.dev",
+    "endpoint": "https://suggest.bigwalk.workers.dev",
     "maxUploadMB": 25
   }
 }
