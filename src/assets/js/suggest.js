@@ -751,6 +751,9 @@
       }
       status.className = "status ok";
       status.textContent = "Sent. Thanks.";
+      /* Bust the comments cache so the new issue's highlight appears on the next reload
+         instead of waiting up to CACHE_MS for the stale list to expire. */
+      try { sessionStorage.removeItem("suggestions-cache"); } catch (_) {}
       setTimeout(() => close(true), 1500);
     } catch (error) {
       status.className = "status error";
