@@ -9,6 +9,24 @@
   const cfg = window.SITE_CONFIG || {};
   const maxUploadBytes = (cfg.maxUploadMB || 25) * 1024 * 1024;
 
+  /* Lucide icons, inlined so the page pulls in no icon library. */
+  const ICONS = {
+    bold: '<path d="M14 12a4 4 0 0 0 0-8H6v8"/><path d="M15 20a4 4 0 0 0 0-8H6v8Z"/>',
+    italic: '<line x1="19" x2="10" y1="4" y2="4"/><line x1="14" x2="5" y1="20" y2="20"/><line x1="15" x2="9" y1="4" y2="20"/>',
+    code: '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
+    link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+    list: '<line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/>',
+  };
+
+  function icon(name) {
+    return (
+      '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" ' +
+      'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+      ICONS[name] +
+      "</svg>"
+    );
+  }
+
   const KINDS = [
     ["edit", "Edit to existing text"],
     ["addition", "New glitch, strat or tech"],
@@ -105,9 +123,12 @@
     const holder = document.createElement("div");
     holder.appendChild(range.cloneContents());
     holder.querySelectorAll(".media, .clip-group, script, style").forEach((el) => el.remove());
+    /* Links keep their look but not their behaviour: this is a preview, not navigation. */
     holder.querySelectorAll("a").forEach((link) => {
-      link.setAttribute("target", "_blank");
-      link.setAttribute("rel", "noopener");
+      const span = document.createElement("span");
+      span.className = "quote-link";
+      span.innerHTML = link.innerHTML;
+      link.replaceWith(span);
     });
     return holder.innerHTML;
   }
@@ -139,14 +160,13 @@
 
       <label for="sg-body">Suggestion <abbr title="required">*</abbr></label>
       <div class="md-toolbar" role="toolbar" aria-label="Formatting">
-        <button type="button" class="btn tiny" data-md="bold" title="Bold"><b>B</b></button>
-        <button type="button" class="btn tiny" data-md="italic" title="Italic"><i>I</i></button>
-        <button type="button" class="btn tiny" data-md="code" title="Code">&lt;&gt;</button>
-        <button type="button" class="btn tiny" data-md="link" title="Link">Link</button>
-        <button type="button" class="btn tiny" data-md="list" title="Bulleted list">List</button>
+        <button type="button" class="icon-btn" data-md="bold" title="Bold" aria-label="Bold">${icon("bold")}</button>
+        <button type="button" class="icon-btn" data-md="italic" title="Italic" aria-label="Italic">${icon("italic")}</button>
+        <button type="button" class="icon-btn" data-md="code" title="Code" aria-label="Code">${icon("code")}</button>
+        <button type="button" class="icon-btn" data-md="link" title="Link" aria-label="Link">${icon("link")}</button>
+        <button type="button" class="icon-btn" data-md="list" title="Bulleted list" aria-label="Bulleted list">${icon("list")}</button>
       </div>
       <textarea id="sg-body" name="body" required></textarea>
-      <p class="hint">Markdown works here: **bold**, *italic*, \`code\`, [text](url).</p>
 
       <label for="sg-media">Video link</label>
       <input id="sg-media" name="media" type="url" placeholder="https://">

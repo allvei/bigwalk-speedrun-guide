@@ -263,7 +263,8 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 .thread-meta dd { margin: 0; overflow-wrap: anywhere; }
 
 .md-toolbar { display: flex; gap: 6px; margin-bottom: 6px; }
-.modal .hint { display: block; color: var(--muted); margin: 6px 0 0; }
+.md-toolbar .icon-btn { width: 28px; height: 28px; }
+.quote-line .quote-link { color: var(--accent); text-decoration: underline; }
 
 .modal .quote-line {
   margin: 0 0 4px; padding: 8px 12px; border-left: 3px solid var(--accent);
