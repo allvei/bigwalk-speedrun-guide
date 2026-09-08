@@ -77,11 +77,14 @@
   }
 
   /* The selected DOM turned back into markdown, so the editable text keeps its formatting. */
-  function toMarkdown(node) {
+  function toMarkdown(node, depth) {
+    depth = depth || 0;
     if (node.nodeType === Node.TEXT_NODE) return node.nodeValue;
     if (node.nodeType !== Node.ELEMENT_NODE) return "";
     if (node.classList.contains("media") || node.classList.contains("clip-group")) return "";
-    const inner = Array.from(node.childNodes).map(toMarkdown).join("");
+    const inner = Array.from(node.childNodes)
+      .map((child) => toMarkdown(child, depth))
+      .join("");
     switch (node.tagName) {
       case "STRONG":
       case "B":
@@ -98,19 +101,31 @@
         return node.classList.contains("header-anchor")
           ? inner
           : "[" + inner + "](" + node.getAttribute("href") + ")";
-      case "LI":
-        return "- " + inner.trim() + "\n";
+      /* Nested levels are indented one space each and stay flush with their parent item. */
+      case "LI": {
+        let text = "";
+        let nested = "";
+        Array.from(node.childNodes).forEach((child) => {
+          if (child.nodeType === Node.ELEMENT_NODE && (child.tagName === "UL" || child.tagName === "OL")) {
+            nested += toMarkdown(child, depth + 1);
+          } else {
+            text += toMarkdown(child, depth);
+          }
+        });
+        return " ".repeat(depth) + "- " + text.replace(/\s+/g, " ").trim() + "\n" + nested;
+      }
       case "BR":
         return "\n";
       case "H2":
       case "H3":
       case "H4":
         return "#".repeat(Number(node.tagName[1])) + " " + inner.trim() + "\n\n";
+      case "UL":
+      case "OL":
+        return depth > 0 ? inner : inner.replace(/\n+$/, "") + "\n\n";
       case "P":
       case "DIV":
       case "BLOCKQUOTE":
-      case "UL":
-      case "OL":
       case "FIGURE":
         return inner.trim() + "\n\n";
       default:
@@ -148,7 +163,9 @@
     <form class="modal">
       <h2>Suggest a change</h2>
       <p class="section-line">Section: <strong data-section-label></strong></p>
-      <blockquote class="quote-line" data-quote-label hidden></blockquote>
+      <div class="quote-wrap">
+        <blockquote class="quote-line" data-quote-label hidden></blockquote>
+      </div>
 
       <label for="sg-title">Title <abbr title="required">*</abbr></label>
       <input id="sg-title" name="title" required placeholder="Fix capitalisation">
@@ -159,16 +176,18 @@
       </select>
 
       <label for="sg-body">Suggestion <abbr title="required">*</abbr></label>
-      <div class="editor-tabs" role="tablist">
-        <button type="button" class="tab is-active" data-tab="write" role="tab" aria-selected="true">Write</button>
-        <button type="button" class="tab" data-tab="preview" role="tab" aria-selected="false">Preview</button>
-      </div>
-      <div class="md-toolbar" role="toolbar" aria-label="Formatting">
-        <button type="button" class="icon-btn" data-md="bold" title="Bold" aria-label="Bold">${icon("bold")}</button>
-        <button type="button" class="icon-btn" data-md="italic" title="Italic" aria-label="Italic">${icon("italic")}</button>
-        <button type="button" class="icon-btn" data-md="code" title="Code" aria-label="Code">${icon("code")}</button>
-        <button type="button" class="icon-btn" data-md="link" title="Link" aria-label="Link">${icon("link")}</button>
-        <button type="button" class="icon-btn" data-md="list" title="Bulleted list" aria-label="Bulleted list">${icon("list")}</button>
+      <div class="editor-bar">
+        <div class="editor-tabs" role="tablist">
+          <button type="button" class="tab is-active" data-tab="write" role="tab" aria-selected="true">Write</button>
+          <button type="button" class="tab" data-tab="preview" role="tab" aria-selected="false">Preview</button>
+        </div>
+        <div class="md-toolbar" role="toolbar" aria-label="Formatting">
+          <button type="button" class="icon-btn" data-md="bold" title="Bold" aria-label="Bold">${icon("bold")}</button>
+          <button type="button" class="icon-btn" data-md="italic" title="Italic" aria-label="Italic">${icon("italic")}</button>
+          <button type="button" class="icon-btn" data-md="code" title="Code" aria-label="Code">${icon("code")}</button>
+          <button type="button" class="icon-btn" data-md="link" title="Link" aria-label="Link">${icon("link")}</button>
+          <button type="button" class="icon-btn" data-md="list" title="Bulleted list" aria-label="Bulleted list">${icon("list")}</button>
+        </div>
       </div>
       <div class="editor-area">
         <div class="editor-highlight" aria-hidden="true"></div>
@@ -236,16 +255,19 @@
   quoteMore.type = "button";
   quoteMore.className = "btn tiny quote-more";
   quoteMore.hidden = true;
-  quoteLabel.after(quoteMore);
+  quoteLabel.parentNode.appendChild(quoteMore);
   quoteMore.addEventListener("click", function () {
     const open = quoteLabel.classList.toggle("is-open");
+    quoteLabel.parentNode.classList.toggle("is-folded", !open);
     quoteMore.textContent = open ? "Show less" : "Show more";
   });
 
   function foldQuote() {
     quoteLabel.classList.remove("is-open");
     quoteMore.textContent = "Show more";
-    quoteMore.hidden = quoteLabel.hidden || quoteLabel.scrollHeight <= quoteLabel.clientHeight + 4;
+    const clipped = !quoteLabel.hidden && quoteLabel.scrollHeight > quoteLabel.clientHeight + 4;
+    quoteMore.hidden = !clipped;
+    quoteLabel.parentNode.classList.toggle("is-folded", clipped);
   }
 
   /* The layer behind the textarea: the same characters, with markdown styled in place, so
@@ -269,9 +291,7 @@
       blocks
         .map((block) => {
           const lines = block.split("\n");
-          if (lines.every((line) => /^\s*[-*] /.test(line))) {
-            return "<ul>" + lines.map((line) => "<li>" + inline(line.replace(/^\s*[-*] /, "")) + "</li>").join("") + "</ul>";
-          }
+          if (lines.every((line) => /^\s*[-*] /.test(line))) return list(lines);
           const heading = /^(#{1,4}) (.*)$/.exec(lines[0]);
           if (heading && lines.length === 1) {
             const level = heading[1].length + 1;
@@ -280,6 +300,25 @@
           return "<p>" + inline(block).replace(/\n/g, "<br>") + "</p>";
         })
         .join("") || '<p class="hint">Nothing to preview yet.</p>';
+  }
+
+  /* Bullet lines nest by their leading spaces, one space per level. */
+  function list(lines) {
+    let html = "";
+    let depth = 0;
+    lines.forEach((line) => {
+      const indent = /^\s*/.exec(line)[0].length;
+      while (indent > depth) {
+        html += "<ul>";
+        depth += 1;
+      }
+      while (indent < depth) {
+        html += "</ul>";
+        depth -= 1;
+      }
+      html += "<li>" + inline(line.replace(/^\s*[-*] /, "")) + "</li>";
+    });
+    return "<ul>" + html + "</ul>".repeat(depth + 1);
   }
 
   function inline(text) {

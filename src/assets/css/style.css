@@ -212,19 +212,24 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 .editor-highlight .md-heading { font-weight: 700; }
 .editor-highlight .md-mark { color: var(--muted); }
 
-.editor-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+/* Tabs left, formatting right, both on one bar above the box. */
+.editor-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.editor-tabs { display: flex; gap: 4px; }
 .editor-tabs .tab {
-  font: inherit; font-size: .82rem; cursor: pointer; padding: 5px 12px;
-  background: none; border: 1px solid transparent; border-radius: 8px 8px 0 0; color: var(--muted);
+  font: inherit; font-size: .84rem; cursor: pointer; padding: 6px 14px;
+  background: none; border: 1px solid transparent; border-radius: 8px; color: var(--muted);
 }
+.editor-tabs .tab:hover { color: var(--text); }
 .editor-tabs .tab.is-active {
-  background: var(--bg); border-color: var(--border); border-bottom-color: var(--bg); color: var(--text);
+  background: var(--bg); border-color: var(--border); color: var(--text);
 }
 .editor-preview {
   min-height: 120px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px;
   background: var(--bg); font-size: .9rem;
 }
 .editor-preview[hidden], .editor-area[hidden], .md-toolbar[hidden] { display: none; }
+.editor-preview ul { margin: .3rem 0; padding-left: 1.3rem; }
+.editor-preview li > ul { margin: 0; }
 .editor-preview > :first-child { margin-top: 0; }
 .editor-preview > :last-child { margin-bottom: 0; }
 .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
@@ -315,21 +320,26 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 .thread-meta dt { font-weight: 600; }
 .thread-meta dd { margin: 0; overflow-wrap: anywhere; }
 
-.md-toolbar { display: flex; gap: 6px; margin-bottom: 6px; }
+.md-toolbar { display: flex; gap: 6px; }
 .md-toolbar .icon-btn { width: 28px; height: 28px; }
 .quote-line .quote-link { color: var(--accent); text-decoration: underline; }
 
 .modal .quote-line {
   margin: 0 0 4px; padding: 8px 12px; border-left: 3px solid var(--accent);
   background: var(--bg-elev-2); color: var(--muted); font-size: .88rem; font-style: italic;
-  position: relative; max-height: 190px; overflow: hidden;
+  max-height: 190px; overflow: hidden;
 }
+.quote-wrap { position: relative; margin-bottom: 4px; }
 .modal .quote-line.is-open { max-height: none; }
-.modal .quote-line:not(.is-open)::after {
-  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 60px;
+/* While folded, the quote fades into its own background and Show more floats over the fade. */
+.quote-wrap.is-folded::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 70px; pointer-events: none;
   background: linear-gradient(to bottom, transparent, var(--bg-elev-2));
 }
-.quote-more { display: block; margin: 6px auto 0; }
+.quote-wrap.is-folded .quote-more {
+  position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); z-index: 1;
+}
+.quote-more { display: block; margin: 6px auto 0; font-size: .78rem; padding: 3px 12px; }
 .quote-more[hidden] { display: none; }
 .modal .quote-line[hidden] { display: none; }
 
