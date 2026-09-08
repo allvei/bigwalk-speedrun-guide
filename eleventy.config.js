@@ -19,6 +19,14 @@ export default function (eleventyConfig) {
     })
   );
 
+  /* Markdown writes site-root paths, which break wherever the site is served from a
+     subdirectory (GitHub Pages). Only the prefix is missing, so it is added here. */
+  const prefix = (process.env.PATH_PREFIX || "/").replace(/\/+$/, "");
+  eleventyConfig.addTransform("assetPrefix", (content, outputPath) => {
+    if (!prefix || !outputPath || !outputPath.endsWith(".html")) return content;
+    return content.replace(/(src|href)="\/assets\//g, `$1="${prefix}/assets/`);
+  });
+
   /* An image alone in a paragraph becomes a figure, its alt text the caption. */
   eleventyConfig.addTransform("figures", (content, outputPath) => {
     if (!outputPath || !outputPath.endsWith(".html")) return content;

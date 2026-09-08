@@ -96,7 +96,8 @@ a:hover { color: var(--accent-2); }
 .site-header .titles { flex: 1 1 260px; }
 .site-header h1 { font-size: 1.15rem; margin: 0; letter-spacing: .2px; }
 .site-header .updated { margin: 2px 0 0; color: var(--muted); font-size: .8rem; }
-.header-links { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.header-links { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.header-sep { width: 1px; height: 20px; background: var(--border); }
 .header-links a { font-size: .9rem; text-decoration: none; color: var(--muted); }
 .header-links a:hover { color: var(--accent); }
 
@@ -109,30 +110,40 @@ a:hover { color: var(--accent-2); }
 /* Labels only exist for the phone menu, where the icons stand on their own rows. */
 .btn-label { display: none; }
 .nav-toggle, .toc-toggle { display: none; }
-.header-toggles { display: contents; }
+
+/* Dims the page behind either phone drawer. */
+.drawer-backdrop {
+  position: fixed; inset: 0; z-index: 28; background: rgba(0,0,0,.45);
+  opacity: 0; transition: opacity .2s ease;
+}
+.drawer-backdrop.is-open { opacity: 1; }
 
 @media (max-width: 900px) {
   .site-header .wrap { flex-wrap: nowrap; gap: 12px; }
+  .site-header .logo { height: 36px; }
   .site-header .titles { flex: 1 1 auto; min-width: 0; }
-  /* Both menu buttons ride on the right of the title rather than wrapping to their own row. */
-  .header-toggles { display: flex; gap: 8px; margin-left: auto; }
-  .nav-toggle, .toc-toggle { display: grid; }
+  /* Contents opens from the left and the rest of the controls from the right, so each button
+     sits on the edge its drawer comes from. */
+  .toc-toggle { display: grid; order: -1; }
+  .nav-toggle { display: grid; margin-left: auto; }
   /* Nothing to gain from half width on a phone. */
   #width-toggle { display: none; }
   .header-links {
-    position: absolute; top: calc(100% + 8px); right: 12px; z-index: 30;
-    flex-direction: column; align-items: stretch; gap: 6px; padding: 8px; min-width: 210px;
-    background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius);
-    box-shadow: 0 12px 28px rgba(0,0,0,.3);
-    transform: scale(.96); transform-origin: top right; opacity: 0; pointer-events: none;
-    transition: transform .16s ease, opacity .16s ease;
+    position: fixed; top: 0; right: 0; bottom: 0; width: 80vw; max-width: 360px; z-index: 30;
+    flex-direction: column; align-items: stretch; flex-wrap: nowrap; gap: 8px;
+    padding: 16px; overflow: auto;
+    background: var(--bg-elev); border-left: 1px solid var(--border);
+    box-shadow: -12px 0 28px rgba(0,0,0,.3);
+    transform: translateX(100%); opacity: 1; pointer-events: none;
+    transition: transform .22s ease;
   }
-  .header-links.is-open { transform: none; opacity: 1; pointer-events: auto; }
+  .header-links.is-open { transform: none; pointer-events: auto; }
   .header-links .icon-btn {
-    width: 100%; height: 38px; grid-auto-flow: column; justify-content: start;
-    gap: 10px; padding: 0 12px;
+    width: 100%; height: 42px; grid-auto-flow: column; justify-content: start;
+    gap: 12px; padding: 0 14px; border-radius: var(--radius);
   }
-  .btn-label { display: inline; font-size: .9rem; }
+  .header-sep { width: auto; height: 1px; margin: 4px 2px; }
+  .btn-label { display: inline; font-size: .95rem; }
 }
 
 /* The table of contents sits at the left edge, out of the flow, so the text stays centred
@@ -173,17 +184,19 @@ html[data-width="full"] .layout > main {
   /* On a phone the contents list is a menu of its own: in the flow it would be a screenful of
      links to scroll past before reaching the text. */
   .toc {
-    left: 8px; right: 8px; width: auto; top: calc(var(--header-h, 84px) + 8px);
-    max-height: 60vh; z-index: 30; padding: 8px;
-    background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius);
-    box-shadow: 0 12px 28px rgba(0,0,0,.3);
-    transform: scale(.96); transform-origin: top left; opacity: 0; pointer-events: none;
-    transition: transform .16s ease, opacity .16s ease;
+    left: 0; top: 0; bottom: 0; right: auto; width: 80vw; max-width: 360px; max-height: none;
+    z-index: 30; padding: 16px 8px; font-size: .95rem;
+    background: var(--bg-elev); border-right: 1px solid var(--border);
+    box-shadow: 12px 0 28px rgba(0,0,0,.3);
+    transform: translateX(-100%); opacity: 1; pointer-events: none;
+    transition: transform .22s ease;
   }
-  .toc.is-open { transform: none; opacity: 1; pointer-events: auto; }
+  .toc.is-open { transform: none; pointer-events: auto; }
+  .toc li a { padding: 8px 12px; }
 }
 
 /* Content */
+.page-updated { margin: 0 0 20px; color: var(--muted); font-size: .82rem; }
 /* Lists read as indented text rather than bulleted columns. A nested list closes tighter than
    a top-level one, so the item after it still reads as a step up. */
 main ul, main ol, .editor-preview ul, .editor-preview ol {
@@ -200,6 +213,22 @@ main figure img { display: block; }
 main figcaption {
   margin-top: .5rem; font-size: .82rem; color: var(--muted); font-style: italic; line-height: 1.45;
 }
+.missing-image {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+  color: var(--muted);
+}
+.missing-image strong { display: block; color: var(--text); font-size: .92rem; }
+.missing-image code { font-size: .8rem; word-break: break-all; }
+.missing-image-text { flex: 1 1 220px; }
+.missing-image-note { flex: 1 1 100%; margin: 0; font-size: .82rem; }
+
 main table { width: 100%; border-collapse: collapse; margin: 1rem 0; display: block; overflow-x: auto; }
 main th, main td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; font-size: .92rem; }
 main th { background: var(--bg-elev-2); }

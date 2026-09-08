@@ -7,6 +7,7 @@
  *   GET  /auth/callback finish it and store the user token in an HttpOnly cookie
  *   GET  /auth/me       who is signed in, and whether they can write to the repo
  *   POST /auth/comment  reply to an issue as the signed-in user
+ *   POST /auth/image    commit a missing image, as a user with push rights
  *   POST /auth/logout   drop the cookie
  *
  * Deploy:
@@ -19,6 +20,8 @@
 const MAX_FIELD = 20000;
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 const EXT = { "video/mp4": "mp4", "video/webm": "webm", "video/quicktime": "mov", "video/x-m4v": "m4v" };
+const IMAGE_EXT = { "image/png": "png", "image/jpeg": "jpg", "image/gif": "gif", "image/webp": "webp" };
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
 const COOKIE = "gh_session";
 
@@ -150,6 +153,45 @@ async function auth(request, env, url, cors, allowed) {
       return Response.json({ error: "GitHub rejected the reply" }, { status: 502, headers: cors });
     }
     return Response.json({ ok: true, comment: await posted.json() }, { headers: cors });
+  }
+
+  /* Filling a gap in the page is an edit to the site, so it is committed as the user and only
+     accepted from someone GitHub says can push. */
+  if (route === "/auth/image" && request.method === "POST") {
+    let data;
+    try {
+      data = await request.json();
+    } catch (_) {
+      return Response.json({ error: "Invalid JSON" }, { status: 400, headers: cors });
+    }
+
+    const path = String(data.path || "");
+    const content = String(data.data || "");
+    const ext = IMAGE_EXT[String(data.type || "")];
+    if (!ext) return Response.json({ error: "Only png, jpg, gif and webp images" }, { status: 400, headers: cors });
+    if (!/^src\/assets\/images\/[A-Za-z0-9._\/-]+$/.test(path) || path.includes("..")) {
+      return Response.json({ error: "That path is not an image in the site" }, { status: 400, headers: cors });
+    }
+    if (!content) return Response.json({ error: "Empty file" }, { status: 400, headers: cors });
+    if (content.length * 0.75 > MAX_IMAGE_BYTES) {
+      return Response.json({ error: "That image is too large" }, { status: 400, headers: cors });
+    }
+
+    const repo = await ghUser(token, `/repos/${env.REPO}`);
+    const canWrite = repo.ok ? Boolean((await repo.json()).permissions?.push) : false;
+    if (!canWrite) return Response.json({ error: "You need write access" }, { status: 403, headers: cors });
+
+    const branch = env.BRANCH || "main";
+    const existing = await ghUser(token, `/repos/${env.REPO}/contents/${path}?ref=${branch}`);
+    const sha = existing.ok ? (await existing.json()).sha : undefined;
+    const committed = await ghUser(token, `/repos/${env.REPO}/contents/${path}`, {
+      method: "PUT",
+      body: JSON.stringify({ message: `Add ${path}`, content, branch, sha }),
+    });
+    if (!committed.ok) {
+      return Response.json({ error: "GitHub rejected the upload" }, { status: 502, headers: cors });
+    }
+    return Response.json({ ok: true, path }, { headers: cors });
   }
 
   return new Response("Not found", { status: 404, headers: cors });

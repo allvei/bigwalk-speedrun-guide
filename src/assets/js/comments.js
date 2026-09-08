@@ -420,6 +420,10 @@
     } catch (_) {
       /* stay signed out */
     }
+    /* Other scripts (the missing-image prompt) need to know who is signed in without asking
+       the worker a second time. */
+    window.siteSession = session;
+    document.dispatchEvent(new CustomEvent("site-session", { detail: session }));
   }
 
   document.addEventListener("DOMContentLoaded", async function () {

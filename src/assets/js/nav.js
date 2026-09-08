@@ -23,7 +23,8 @@
     const toc = document.querySelector(".toc");
     const navBtn = document.getElementById("nav-toggle");
     const tocBtn = document.getElementById("toc-toggle");
-    if (!header || !links || !toc || !navBtn || !tocBtn) return;
+    const backdrop = document.getElementById("drawer-backdrop");
+    if (!header || !links || !toc || !navBtn || !tocBtn || !backdrop) return;
 
     /* The panels hang off the header, whose height depends on how the title wraps. */
     function measure() {
@@ -37,24 +38,44 @@
       button.setAttribute("aria-expanded", String(open));
     }
 
+    /* Hidden is dropped a frame before the class so the dimming actually transitions. */
+    function dim(open) {
+      if (open) {
+        backdrop.hidden = false;
+        requestAnimationFrame(() => backdrop.classList.add("is-open"));
+      } else {
+        backdrop.classList.remove("is-open");
+        window.setTimeout(() => {
+          if (!backdrop.classList.contains("is-open")) backdrop.hidden = true;
+        }, 200);
+      }
+      document.body.style.overflow = open ? "hidden" : "";
+    }
+
     function closeAll() {
       show(links, navBtn, false);
       show(toc, tocBtn, false);
+      dim(false);
+    }
+
+    function open(panel, button) {
+      const next = !panel.classList.contains("is-open");
+      closeAll();
+      show(panel, button, next);
+      dim(next);
     }
 
     navBtn.addEventListener("click", function (event) {
       event.stopPropagation();
-      const open = !links.classList.contains("is-open");
-      closeAll();
-      show(links, navBtn, open);
+      open(links, navBtn);
     });
 
     tocBtn.addEventListener("click", function (event) {
       event.stopPropagation();
-      const open = !toc.classList.contains("is-open");
-      closeAll();
-      show(toc, tocBtn, open);
+      open(toc, tocBtn);
     });
+
+    backdrop.addEventListener("click", closeAll);
 
     toc.addEventListener("click", function (event) {
       if (event.target.closest("a")) closeAll();
