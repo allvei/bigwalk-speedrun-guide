@@ -70,19 +70,21 @@ a:hover { color: var(--accent-2); }
 }
 .icon-btn:hover { color: var(--accent); border-color: var(--accent); }
 
-/* Layout: table of contents pinned to the left edge, content centred in what is left. */
-.layout {
-  max-width: none; display: grid; grid-template-columns: var(--toc-w) minmax(0, 1fr);
-  gap: 40px; padding: 28px 24px 40px;
-}
+/* The table of contents sits at the left edge, out of the flow, so the text stays centred
+   on the screen rather than in the space left over beside it. */
+.layout { max-width: none; padding: 28px 24px 40px; }
 .layout > main { width: 100%; max-width: var(--content-w); margin: 0 auto; }
-body[data-width="full"] .layout > main { max-width: none; }
+body[data-width="full"] .layout > main { max-width: none; padding-left: calc(var(--toc-w) + 24px); }
+@media (max-width: 1100px) {
+  .layout > main, body[data-width="full"] .layout > main { padding-left: calc(var(--toc-w) + 24px); }
+}
 @media (max-width: 900px) {
-  .layout { grid-template-columns: 1fr; padding: 20px 16px 32px; }
-  .toc { position: static !important; max-height: none !important; }
+  .layout { padding: 20px 16px 32px; }
+  .layout > main, body[data-width="full"] .layout > main { padding-left: 0; }
+  .toc { position: static !important; width: auto !important; max-height: none !important; }
 }
 
-.toc { position: sticky; top: 92px; align-self: start; max-height: calc(100vh - 100px - var(--footer-h)); overflow: auto; font-size: .88rem; }
+.toc { position: fixed; left: 8px; top: 92px; width: var(--toc-w); max-height: calc(100vh - 100px - var(--footer-h)); overflow: auto; font-size: .88rem; }
 .toc ul { list-style: none; margin: 0; padding: 0; }
 .toc li a { display: block; padding: 4px 10px; color: var(--muted); text-decoration: none; border-left: 2px solid transparent; }
 .toc li a:hover { color: var(--text); background: var(--bg-elev-2); }
@@ -127,10 +129,8 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 .discord-btn, .discord-btn:hover { text-decoration: none; color: var(--text); }
 .discord-btn:hover { color: var(--accent); border-color: var(--accent); }
 .clip-group { display: inline-flex; align-items: center; }
-.upload-btn {
-  margin-left: 10px; opacity: 0; pointer-events: none; transition: opacity .12s;
-}
-.clip-group:hover .upload-btn, .clip-group:focus-within .upload-btn { opacity: 1; pointer-events: auto; }
+.upload-btn { display: none; margin-left: 10px; }
+.clip-group:hover .upload-btn, .clip-group:focus-within .upload-btn { display: inline-block; }
 
 /* Media */
 .media {

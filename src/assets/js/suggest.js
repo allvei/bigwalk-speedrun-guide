@@ -100,6 +100,18 @@
     }
   }
 
+  /* The quote is shown as it appears on the page, so bold and links read the same in the box. */
+  function selectionHtml(range) {
+    const holder = document.createElement("div");
+    holder.appendChild(range.cloneContents());
+    holder.querySelectorAll(".media, .clip-group, script, style").forEach((el) => el.remove());
+    holder.querySelectorAll("a").forEach((link) => {
+      link.setAttribute("target", "_blank");
+      link.setAttribute("rel", "noopener");
+    });
+    return holder.innerHTML;
+  }
+
   function selectionMarkdown(range) {
     const holder = document.createElement("div");
     holder.appendChild(range.cloneContents());
@@ -238,7 +250,8 @@
     fields.title.value = opts.title || "";
     fields.body.value = opts.body || current.quoteMd || "";
     fields.quote.value = opts.quote || "";
-    quoteLabel.textContent = fields.quote.value;
+    if (opts.quoteHtml) quoteLabel.innerHTML = opts.quoteHtml;
+    else quoteLabel.textContent = fields.quote.value;
     quoteLabel.hidden = !fields.quote.value;
     fields.media.value = opts.mediaUrl || "";
     fields.body.placeholder =
@@ -370,7 +383,14 @@
     menu.style.top = Math.min(event.clientY, window.innerHeight - height - 8) + window.scrollY + "px";
     menu.firstChild.onclick = function () {
       hideMenu();
-      open({ kind: "edit", node: node, quote: text, quoteMd: quoteMd, sources: sources });
+      open({
+        kind: "edit",
+        node: node,
+        quote: text,
+        quoteMd: quoteMd,
+        quoteHtml: selectionHtml(range),
+        sources: sources,
+      });
     };
   });
 

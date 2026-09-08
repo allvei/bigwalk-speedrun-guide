@@ -55,10 +55,8 @@
     <nav class="header-links">
       <a href="{{ site.discordUrl }}">Discord</a>
       <a href="{{ site.speedrunUrl }}">Leaderboards</a>
-      <a href="https://github.com/{{ site.repo }}">Source</a>
       <button type="button" class="btn" data-suggest-open data-kind="addition">Suggest</button>
       <button type="button" class="btn" id="auth-btn" hidden></button>
-      <button type="button" class="btn" id="width-toggle"></button>
       <button type="button" class="icon-btn" id="suggestions-toggle" aria-pressed="false"></button>
       <button type="button" class="icon-btn" id="theme-toggle" aria-label="Switch theme" title="Switch theme"></button>
     </nav>
@@ -77,8 +75,9 @@
 <footer class="site-footer">
   <div class="wrap">
     <p>Select any text and right-click to suggest a change.</p>
-    <p><a href="https://github.com/{{ site.repo }}">Repository</a></p>
+    <p><a href="https://github.com/{{ site.repo }}">Source</a></p>
     <p><a href="https://github.dev/{{ site.repo }}">Edit on GitHub</a></p>
+    <p><button type="button" class="btn tiny" id="width-toggle"></button></p>
   </div>
 </footer>
 
