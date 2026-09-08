@@ -27,9 +27,16 @@
     document.addEventListener("DOMContentLoaded", function () {
       var width = localStorage.getItem("width") === "full" ? "full" : "boxed";
       var button = document.getElementById("width-toggle");
+      /* chevrons-right-left shrinks back to the column, chevrons-left-right opens it up. */
+      var svg = function (paths) {
+        return '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"' +
+          ' stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + paths + '</svg>';
+      };
+      var OUT = svg('<path d="m9 7-5 5 5 5"/><path d="m15 7 5 5-5 5"/>');
+      var IN = svg('<path d="m20 17-5-5 5-5"/><path d="m4 17 5-5-5-5"/>');
       function apply() {
         document.body.dataset.width = width;
-        button.textContent = width === "full" ? "Boxed" : "Full width";
+        button.innerHTML = width === "full" ? IN + "<span>Half width</span>" : OUT + "<span>Full width</span>";
         button.title = width === "full" ? "Centre the text in a column" : "Use the whole window";
       }
       apply();
@@ -55,7 +62,10 @@
     <nav class="header-links">
       <a href="{{ site.discordUrl }}">Discord</a>
       <a href="{{ site.speedrunUrl }}">Leaderboards</a>
-      <button type="button" class="btn" data-suggest-open data-kind="addition">Suggest</button>
+      <button type="button" class="btn" data-suggest-open data-kind="addition">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+        <span>Suggest</span>
+      </button>
       <button type="button" class="btn" id="auth-btn" hidden></button>
       <button type="button" class="icon-btn" id="suggestions-toggle" aria-pressed="false"></button>
       <button type="button" class="icon-btn" id="theme-toggle" aria-label="Switch theme" title="Switch theme"></button>
@@ -77,7 +87,7 @@
     <p>Select any text and right-click to suggest a change.</p>
     <p><a href="https://github.com/{{ site.repo }}">Source</a></p>
     <p><a href="https://github.dev/{{ site.repo }}">Edit on GitHub</a></p>
-    <p><button type="button" class="btn tiny" id="width-toggle"></button></p>
+    <p><button type="button" class="btn tiny icon-text" id="width-toggle"></button></p>
   </div>
 </footer>
 

@@ -16,6 +16,11 @@
     code: '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
     link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
     list: '<line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/>',
+    heading: '<path d="M6 12h12"/><path d="M6 20V4"/><path d="M18 20V4"/>',
+    heading1: '<path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="m17 12 3-2v8"/>',
+    heading2: '<path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="M21 18h-4c0-4 4-3 4-6 0-1.5-2-2.5-4-1"/>',
+    heading3: '<path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="M17.5 10.5c1.7-1 3.5 0 3.5 1.5a2 2 0 0 1-2 2"/><path d="M17 17.5c2 1.5 4 .3 4-1.5a2 2 0 0 0-2-2"/>',
+    copy: '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
   };
 
   function icon(name) {
@@ -171,9 +176,12 @@
       <input id="sg-title" name="title" required placeholder="Fix capitalisation">
 
       <label for="sg-kind">Type <abbr title="required">*</abbr></label>
-      <select id="sg-kind" name="kind">
-        ${KINDS.map(([v, l]) => `<option value="${v}">${l}</option>`).join("")}
-      </select>
+      <div class="select-wrap">
+        <select id="sg-kind" name="kind">
+          ${KINDS.map(([v, l]) => `<option value="${v}">${l}</option>`).join("")}
+        </select>
+        <svg class="select-chevron" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
 
       <label for="sg-body">Suggestion <abbr title="required">*</abbr></label>
       <div class="editor-bar">
@@ -187,6 +195,14 @@
           <button type="button" class="icon-btn" data-md="code" title="Code" aria-label="Code">${icon("code")}</button>
           <button type="button" class="icon-btn" data-md="link" title="Link" aria-label="Link">${icon("link")}</button>
           <button type="button" class="icon-btn" data-md="list" title="Bulleted list" aria-label="Bulleted list">${icon("list")}</button>
+          <span class="heading-group">
+            <button type="button" class="icon-btn" data-heading-toggle title="Heading" aria-label="Heading" aria-expanded="false">${icon("heading")}</button>
+            <span class="heading-levels">
+              <button type="button" class="icon-btn" data-md="h1" title="Heading 1" aria-label="Heading 1">${icon("heading1")}</button>
+              <button type="button" class="icon-btn" data-md="h2" title="Heading 2" aria-label="Heading 2">${icon("heading2")}</button>
+              <button type="button" class="icon-btn" data-md="h3" title="Heading 3" aria-label="Heading 3">${icon("heading3")}</button>
+            </span>
+          </span>
         </div>
       </div>
       <div class="editor-area">
@@ -363,6 +379,7 @@
   /* Markdown buttons wrap whatever is selected. Inserting through execCommand keeps the
      browser's own undo stack, which setRangeText would throw away. */
   const WRAP = { bold: ["**", "**"], italic: ["*", "*"], code: ["`", "`"], link: ["[", "](https://)"] };
+  const HEADINGS = { h1: "# ", h2: "## ", h3: "### " };
   function insert(area, text) {
     area.focus();
     if (!document.execCommand || !document.execCommand("insertText", false, text)) {
@@ -376,7 +393,9 @@
       const area = fields.body;
       const picked = area.value.slice(area.selectionStart, area.selectionEnd);
       let replacement;
-      if (button.dataset.md === "list") {
+      if (HEADINGS[button.dataset.md]) {
+        replacement = HEADINGS[button.dataset.md] + (picked || "Heading");
+      } else if (button.dataset.md === "list") {
         replacement = (picked || "item")
           .split("\n")
           .map((line) => (line.startsWith("- ") ? line : "- " + line))
@@ -390,10 +409,42 @@
     });
   });
 
-  function close() {
-    backdrop.hidden = true;
-    document.body.style.overflow = "";
-    if (lastFocused) lastFocused.focus();
+  /* The heading button unrolls H1-H3 to its right. */
+  const headingGroup = form.querySelector(".heading-group");
+  const headingToggle = form.querySelector("[data-heading-toggle]");
+  headingToggle.addEventListener("click", function () {
+    const open = headingGroup.classList.toggle("is-open");
+    headingToggle.setAttribute("aria-expanded", String(open));
+  });
+  headingGroup.querySelectorAll("[data-md]").forEach((button) => {
+    button.addEventListener("click", function () {
+      headingGroup.classList.remove("is-open");
+      headingToggle.setAttribute("aria-expanded", "false");
+    });
+  });
+
+  /* What the box held when it opened, so Cancel can tell edits from an untouched form. */
+  let pristine = "";
+
+  function dirty() {
+    return (
+      fields.body.value !== pristine ||
+      fields.title.value.trim() !== "" ||
+      fields.media.value.trim() !== "" ||
+      fields.author.value.trim() !== "" ||
+      Boolean(fields.file.files && fields.file.files.length)
+    );
+  }
+
+  function close(force) {
+    if (!force && dirty() && !window.confirm("Discard this suggestion?")) return;
+    backdrop.classList.add("is-closing");
+    window.setTimeout(function () {
+      backdrop.hidden = true;
+      backdrop.classList.remove("is-closing", "is-open");
+      document.body.style.overflow = "";
+      if (lastFocused) lastFocused.focus();
+    }, 150);
   }
 
   function open(opts) {
@@ -432,10 +483,13 @@
         ? "Anything worth knowing about the clip: who recorded it, what it shows."
         : "What should it say instead?";
     backdrop.hidden = false;
+    backdrop.classList.remove("is-closing");
+    requestAnimationFrame(() => backdrop.classList.add("is-open"));
     document.body.style.overflow = "hidden";
     showTab("write");
     grow();
     foldQuote();
+    pristine = fields.body.value;
     (opts.wantsFile && !fields.file.disabled ? fields.file : hasSelection ? fields.title : fields.body).focus();
   }
 
@@ -510,7 +564,7 @@
       if (!response.ok) throw new Error("HTTP " + response.status);
       status.className = "status ok";
       status.textContent = "Sent. Thanks.";
-      setTimeout(close, 1500);
+      setTimeout(() => close(true), 1500);
     } catch (error) {
       status.className = "status error";
       status.innerHTML =
@@ -519,12 +573,11 @@
     }
   });
 
-  form.querySelector("[data-suggest-close]").addEventListener("click", close);
-  backdrop.addEventListener("click", (e) => {
-    if (e.target === backdrop) close();
-  });
+  /* Clicking the backdrop leaves the box alone: losing a half-written suggestion to a stray
+     click is worse than one extra click to cancel. */
+  form.querySelector("[data-suggest-close]").addEventListener("click", () => close(false));
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !backdrop.hidden) close();
+    if (e.key === "Escape" && !backdrop.hidden) close(false);
   });
   window.addEventListener("suggest:open", (e) => open(e.detail || {}));
 
@@ -533,11 +586,40 @@
   const menu = document.createElement("div");
   menu.className = "context-menu";
   menu.hidden = true;
-  menu.innerHTML = '<button type="button">Suggest</button>';
+  menu.innerHTML =
+    '<button type="button" data-action="suggest">Suggest</button>' +
+    '<button type="button" data-action="copy">Copy</button>' +
+    '<button type="button" data-action="copy-raw">Copy as Markdown</button>';
   document.body.appendChild(menu);
+  const menuItems = {
+    suggest: menu.querySelector('[data-action="suggest"]'),
+    copy: menu.querySelector('[data-action="copy"]'),
+    raw: menu.querySelector('[data-action="copy-raw"]'),
+  };
 
   function hideMenu() {
     menu.hidden = true;
+  }
+
+  function copy(text, button, label) {
+    const done = () => {
+      button.textContent = "Copied";
+      window.setTimeout(() => {
+        button.textContent = label;
+        hideMenu();
+      }, 600);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, hideMenu);
+      return;
+    }
+    const holder = document.createElement("textarea");
+    holder.value = text;
+    document.body.appendChild(holder);
+    holder.select();
+    document.execCommand("copy");
+    holder.remove();
+    done();
   }
 
   document.addEventListener("contextmenu", function (event) {
@@ -557,7 +639,7 @@
     const height = menu.offsetHeight;
     menu.style.left = Math.min(event.clientX, window.innerWidth - width - 8) + window.scrollX + "px";
     menu.style.top = Math.min(event.clientY, window.innerHeight - height - 8) + window.scrollY + "px";
-    menu.firstChild.onclick = function () {
+    menuItems.suggest.onclick = function () {
       hideMenu();
       open({
         kind: "edit",
@@ -568,8 +650,13 @@
         sources: sources,
       });
     };
+    menuItems.copy.onclick = () => copy(text, menuItems.copy, "Copy");
+    menuItems.raw.onclick = () => copy(quoteMd || text, menuItems.raw, "Copy as Markdown");
   });
 
+  /* The copy items show "Copied" for a moment, so their clicks must not reach the document
+     handler that dismisses the menu. */
+  menu.addEventListener("click", (event) => event.stopPropagation());
   document.addEventListener("click", hideMenu);
   document.addEventListener("scroll", hideMenu, { passive: true });
   document.addEventListener("keydown", (e) => e.key === "Escape" && hideMenu());

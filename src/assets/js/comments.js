@@ -191,7 +191,11 @@
   document.addEventListener("keydown", (e) => e.key === "Escape" && closePanel());
 
   function closePanel() {
-    panel.hidden = true;
+    if (panel.hidden) return;
+    panel.classList.remove("is-open");
+    window.setTimeout(() => {
+      if (!panel.classList.contains("is-open")) panel.hidden = true;
+    }, 200);
     document.body.classList.remove("thread-open");
     document.querySelectorAll(".suggestion-mark.active").forEach((m) => m.classList.remove("active"));
   }
@@ -254,6 +258,7 @@
   async function openThread(issue) {
     openIssue = issue;
     panel.hidden = false;
+    requestAnimationFrame(() => panel.classList.add("is-open"));
     replyForm.hidden = !session.signedIn;
     panelReply.hidden = session.signedIn;
     document.body.classList.add("thread-open");
