@@ -34,6 +34,31 @@
 
 * { box-sizing: border-box; }
 
+/* The gutter is always there, so locking the page behind the modal cannot shift it sideways. */
+html { scrollbar-gutter: stable; }
+
+/* One thin overlay bar everywhere, inset from the edge with no track behind it. */
+html, .modal, .thread-body, .toc, .select-list {
+  scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+}
+html::-webkit-scrollbar, .modal::-webkit-scrollbar, .thread-body::-webkit-scrollbar,
+.toc::-webkit-scrollbar, .select-list::-webkit-scrollbar { width: 12px; }
+html::-webkit-scrollbar-track, .modal::-webkit-scrollbar-track, .thread-body::-webkit-scrollbar-track,
+.toc::-webkit-scrollbar-track, .select-list::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb, .modal::-webkit-scrollbar-thumb, .thread-body::-webkit-scrollbar-thumb,
+.toc::-webkit-scrollbar-thumb, .select-list::-webkit-scrollbar-thumb {
+  background: var(--bg-elev-2); border-radius: 999px; border: 3px solid transparent; background-clip: content-box;
+}
+html::-webkit-scrollbar-thumb:hover, .modal::-webkit-scrollbar-thumb:hover, .thread-body::-webkit-scrollbar-thumb:hover,
+.toc::-webkit-scrollbar-thumb:hover, .select-list::-webkit-scrollbar-thumb:hover {
+  background: var(--border); background-clip: content-box;
+}
+
+/* Keyboard focus gets the same thin accent ring as the open dropdown. */
+:focus-visible {
+  outline: 1px solid var(--accent); outline-offset: 2px;
+}
+
 body {
   margin: 0;
   padding-bottom: var(--footer-h);
@@ -75,7 +100,7 @@ a:hover { color: var(--accent-2); }
 .layout { max-width: none; padding: 28px 24px 40px; }
 .layout > main {
   width: 100%; max-width: var(--content-w); margin: 0 auto;
-  transition: max-width .25s ease, padding-left .25s ease;
+  transition: max-width .45s ease, padding-left .45s ease;
 }
 /* A resolvable length rather than none, so max-width has something to animate towards. */
 body[data-width="full"] .layout > main {
@@ -170,19 +195,6 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 .media-frame { position: relative; aspect-ratio: 16 / 9; background: #000; }
 .media-frame iframe, .media-frame video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 
-/* Scrollbars: the native ones are heavy next to this palette. */
-.modal, .thread-body, .toc {
-  scrollbar-width: thin; scrollbar-color: var(--border) transparent;
-}
-.modal::-webkit-scrollbar, .thread-body::-webkit-scrollbar, .toc::-webkit-scrollbar { width: 10px; }
-.modal::-webkit-scrollbar-track, .thread-body::-webkit-scrollbar-track, .toc::-webkit-scrollbar-track { background: transparent; }
-.modal::-webkit-scrollbar-thumb, .thread-body::-webkit-scrollbar-thumb, .toc::-webkit-scrollbar-thumb {
-  background: var(--border); border-radius: 999px; border: 3px solid transparent; background-clip: content-box;
-}
-.modal::-webkit-scrollbar-thumb:hover, .thread-body::-webkit-scrollbar-thumb:hover, .toc::-webkit-scrollbar-thumb:hover {
-  background: var(--muted); background-clip: content-box;
-}
-
 /* Modal */
 .modal-backdrop {
   position: fixed; inset: 0; background: rgba(0,0,0,.55); display: grid; place-items: center;
@@ -214,16 +226,36 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 }
 .modal input[type="file"] { padding: 7px; }
 .modal input:disabled { opacity: .5; }
-/* Custom select: native chevron off, site chrome on. */
+/* Custom select: the native control is kept for the form value but never drawn. */
 .select-wrap { position: relative; }
-.select-wrap select {
-  appearance: none; -webkit-appearance: none; padding-right: 34px; cursor: pointer;
+.select-wrap select { position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0; }
+.select-btn {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;
+  background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px;
+  padding: 9px 11px; font: inherit; font-size: .92rem; cursor: pointer; text-align: left;
 }
-.select-chevron {
-  position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
-  color: var(--muted); pointer-events: none;
+.select-chevron { color: var(--muted); transition: transform .15s ease; }
+.select-wrap.is-open .select-btn { border-color: var(--accent); }
+.select-wrap.is-open .select-chevron { transform: rotate(180deg); }
+.select-list {
+  position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 5; margin: 0; padding: 4px;
+  list-style: none; max-height: 240px; overflow: auto;
+  background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.25);
+  animation: select-drop .14s ease; transform-origin: top center;
 }
-.select-wrap select:focus { border-color: var(--accent); outline: none; }
+@keyframes select-drop {
+  from { opacity: 0; transform: scaleY(.94); }
+  to { opacity: 1; transform: none; }
+}
+.select-list[hidden] { display: none; }
+.select-list li {
+  padding: 7px 10px; border-radius: 6px; font-size: .9rem; cursor: pointer;
+}
+.select-list li:hover { background: var(--bg-elev-2); color: var(--accent); }
+.select-list li[aria-selected="true"] { color: var(--accent); }
+.select-list li.is-disabled { color: var(--muted); opacity: .55; cursor: not-allowed; }
+.select-list li.is-disabled:hover { background: none; color: var(--muted); }
 
 /* The editor is a styled layer with a transparent textarea on top, so markdown reads as
    formatted text while its syntax stays visible and editable. */
@@ -235,6 +267,8 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 .modal textarea {
   resize: none; overflow: hidden; position: relative; background: transparent;
   color: transparent; caret-color: var(--text);
+  /* Block, or the textarea's baseline leaves a strip of dead space under the box. */
+  display: block; vertical-align: top;
 }
 .modal textarea::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); }
 .modal textarea::placeholder { color: var(--muted); }
@@ -258,11 +292,12 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 .editor-tabs .tab.is-active {
   background: var(--bg); border-color: var(--border); color: var(--text);
 }
-/* Write and Preview swap with a small scale-in so the box does not just jump size. */
-.editor-area, .editor-preview { animation: editor-scale .18s ease; transform-origin: top center; }
-@keyframes editor-scale {
-  from { opacity: 0; transform: scale(.985); }
-  to { opacity: 1; transform: none; }
+/* Swapping tabs animates the box height while the text fades in, so nothing slides sideways. */
+.editor-swap { overflow: hidden; transition: height .22s ease; }
+.editor-area, .editor-preview { animation: editor-fade .22s ease; }
+@keyframes editor-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 .editor-preview {
   min-height: 120px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px;
@@ -394,12 +429,7 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 }
 .quote-wrap { position: relative; margin-bottom: 4px; }
 /* Show more grows the quote out of itself rather than snapping open. */
-.modal .quote-line { transition: max-height .28s ease; transform-origin: top center; }
-.modal .quote-line.is-open { max-height: 4000px; animation: quote-grow .28s ease; }
-@keyframes quote-grow {
-  from { transform: scaleY(.96); opacity: .65; }
-  to { transform: none; opacity: 1; }
-}
+.modal .quote-line { transition: max-height .3s cubic-bezier(.4, 0, .2, 1); }
 /* While folded, the quote fades into the modal background and Show more floats over the fade. */
 .quote-wrap.is-folded::after {
   content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 70px; pointer-events: none;

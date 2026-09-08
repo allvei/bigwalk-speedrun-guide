@@ -177,10 +177,19 @@
 
       <label for="sg-kind">Type <abbr title="required">*</abbr></label>
       <div class="select-wrap">
-        <select id="sg-kind" name="kind">
+        <select id="sg-kind" name="kind" tabindex="-1" aria-hidden="true">
           ${KINDS.map(([v, l]) => `<option value="${v}">${l}</option>`).join("")}
         </select>
-        <svg class="select-chevron" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        <button type="button" class="select-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Type">
+          <span data-select-label></span>
+          <svg class="select-chevron" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <ul class="select-list" role="listbox" hidden>
+          ${KINDS.map(
+            ([v, l]) =>
+              `<li role="option" aria-selected="false" tabindex="-1" data-value="${v}">${l}</li>`
+          ).join("")}
+        </ul>
       </div>
 
       <label for="sg-body">Suggestion <abbr title="required">*</abbr></label>
@@ -205,11 +214,13 @@
           </span>
         </div>
       </div>
-      <div class="editor-area">
-        <div class="editor-highlight" aria-hidden="true"></div>
-        <textarea id="sg-body" name="body" required spellcheck="true"></textarea>
+      <div class="editor-swap">
+        <div class="editor-area">
+          <div class="editor-highlight" aria-hidden="true"></div>
+          <textarea id="sg-body" name="body" required spellcheck="true"></textarea>
+        </div>
+        <div class="editor-preview" hidden></div>
       </div>
-      <div class="editor-preview" hidden></div>
 
       <label for="sg-media">Video link</label>
       <input id="sg-media" name="media" type="url" placeholder="https://">
@@ -244,6 +255,7 @@
   const preview = form.querySelector(".editor-preview");
   const toolbar = form.querySelector(".md-toolbar");
   const editorArea = form.querySelector(".editor-area");
+  const editorSwap = form.querySelector(".editor-swap");
   const fields = {
     title: form.querySelector("#sg-title"),
     kind: form.querySelector("#sg-kind"),
@@ -256,6 +268,45 @@
     section: form.querySelector('input[name="section"]'),
     quote: form.querySelector('input[name="quote"]'),
   };
+  /* A listbox of our own: the native popup is drawn by the OS and ignores the site's styling.
+     The real <select> stays in the form so its value and validation keep working. */
+  const selectWrap = form.querySelector(".select-wrap");
+  const selectBtn = selectWrap.querySelector(".select-btn");
+  const selectLabel = selectWrap.querySelector("[data-select-label]");
+  const selectList = selectWrap.querySelector(".select-list");
+  const selectOptions = Array.from(selectList.children);
+
+  function syncSelect() {
+    const chosen = form.querySelector("#sg-kind");
+    selectLabel.textContent = chosen.options[chosen.selectedIndex].textContent;
+    selectOptions.forEach((option) => {
+      const native = chosen.querySelector(`option[value="${option.dataset.value}"]`);
+      option.setAttribute("aria-selected", String(option.dataset.value === chosen.value));
+      option.classList.toggle("is-disabled", native.disabled);
+      option.title = native.title;
+    });
+  }
+
+  function openSelect(open) {
+    selectList.hidden = !open;
+    selectWrap.classList.toggle("is-open", open);
+    selectBtn.setAttribute("aria-expanded", String(open));
+  }
+
+  selectBtn.addEventListener("click", () => openSelect(selectList.hidden));
+  selectOptions.forEach((option) => {
+    option.addEventListener("click", function () {
+      if (option.classList.contains("is-disabled")) return;
+      form.querySelector("#sg-kind").value = option.dataset.value;
+      syncSelect();
+      openSelect(false);
+      selectBtn.focus();
+    });
+  });
+  document.addEventListener("click", function (event) {
+    if (!selectList.hidden && !selectWrap.contains(event.target)) openSelect(false);
+  });
+
   uploadHint.textContent = cfg.endpoint ? `(up to ${cfg.maxUploadMB} MB)` : "(uploads not enabled yet)";
   fields.file.disabled = !cfg.endpoint;
 
@@ -272,14 +323,27 @@
   quoteMore.className = "btn tiny quote-more";
   quoteMore.hidden = true;
   quoteLabel.parentNode.appendChild(quoteMore);
+  /* Folding animates between two real heights: a max-height jumping to a huge value would
+     spend most of the transition on empty space. */
+  const QUOTE_FOLDED = 190;
   quoteMore.addEventListener("click", function () {
-    const open = quoteLabel.classList.toggle("is-open");
+    const open = !quoteLabel.classList.contains("is-open");
+    quoteLabel.classList.toggle("is-open", open);
     quoteLabel.parentNode.classList.toggle("is-folded", !open);
     quoteMore.textContent = open ? "Show less" : "Show more";
+    quoteLabel.style.maxHeight = (open ? quoteLabel.scrollHeight : QUOTE_FOLDED) + "px";
+  });
+
+  quoteLabel.addEventListener("transitionend", function (event) {
+    /* Let a grown quote keep following its content once it has finished opening. */
+    if (event.propertyName === "max-height" && quoteLabel.classList.contains("is-open")) {
+      quoteLabel.style.maxHeight = "none";
+    }
   });
 
   function foldQuote() {
     quoteLabel.classList.remove("is-open");
+    quoteLabel.style.maxHeight = "";
     quoteMore.textContent = "Show more";
     const clipped = !quoteLabel.hidden && quoteLabel.scrollHeight > quoteLabel.clientHeight + 4;
     quoteMore.hidden = !clipped;
@@ -346,12 +410,24 @@
       .replace(/\[([^\]\n]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
   }
 
+  /* Swapping tabs animates the box's height only; the text itself just fades. */
   function showTab(name) {
     const writing = name === "write";
+    const from = editorSwap.offsetHeight;
     editorArea.hidden = !writing;
     toolbar.hidden = !writing;
     preview.hidden = writing;
     if (!writing) renderPreview();
+    editorSwap.style.height = "auto";
+    const to = editorSwap.offsetHeight;
+    if (from && to !== from) {
+      editorSwap.style.height = from + "px";
+      requestAnimationFrame(() => {
+        editorSwap.style.height = to + "px";
+      });
+    } else {
+      editorSwap.style.height = "";
+    }
     form.querySelectorAll(".editor-tabs .tab").forEach((tab) => {
       const on = tab.dataset.tab === name;
       tab.classList.toggle("is-active", on);
@@ -361,6 +437,11 @@
 
   form.querySelectorAll(".editor-tabs .tab").forEach((tab) => {
     tab.addEventListener("click", () => showTab(tab.dataset.tab));
+  });
+
+  /* Once the height transition lands, hand the box back to its content. */
+  editorSwap.addEventListener("transitionend", function (event) {
+    if (event.propertyName === "height") editorSwap.style.height = "";
   });
 
   /* The textarea follows its content; the modal only scrolls once it runs out of screen, and
@@ -501,6 +582,8 @@
     fields.kind.value = KINDS.some(([v]) => v === opts.kind) && !(opts.kind === "edit" && !hasSelection)
       ? opts.kind
       : "addition";
+    syncSelect();
+    openSelect(false);
 
     fields.section.value = headingText(heading);
     sectionLabel.textContent =
@@ -616,6 +699,7 @@
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
     if (!discard.hidden) hideDiscard();
+    else if (!selectList.hidden) openSelect(false);
     else if (!backdrop.hidden) close(false);
   });
   window.addEventListener("suggest:open", (e) => open(e.detail || {}));
