@@ -380,7 +380,7 @@
         .replace(/(~~[^~\n]+~~)/g, "<del>$1</del>")
         .replace(/(\[[^\]\n]+\]\([^)\n]*\))/g, '<span class="md-link">$1</span>')
         .replace(/^(#{1,4} .*)$/gm, '<span class="md-heading">$1</span>')
-        .replace(/^(\s*[-*] )/gm, '<span class="md-mark">$1</span>') + "\n";
+        .replace(/^((?:\s*(?:[-*]|\d+\.)\s))/gm, '<span class="md-mark">$1</span>') + "\n";
   }
 
   /* Preview tab: the same light markdown, rendered. */
@@ -390,7 +390,7 @@
       blocks
         .map((block) => {
           const lines = block.split("\n");
-          if (lines.every((line) => /^\s*[-*] /.test(line))) return list(lines);
+          if (lines.every((line) => /^\s*(?:[-*]|\d+\.)\s/.test(line))) return list(lines);
           const heading = /^(#{1,4}) (.*)$/.exec(lines[0]);
           if (heading && lines.length === 1) {
             const level = heading[1].length + 1;
@@ -406,21 +406,24 @@
      of the <li> it belongs to, the same shape markdown-it produces, so the shared list CSS
      applies to both the page and the preview. */
   function list(lines) {
-    const root = document.createElement("ul");
+    const first = lines[0] || "";
+    const ordered = /^\s*\d+\./.test(first);
+    const root = document.createElement(ordered ? "ol" : "ul");
     const stack = [root];
     lines.forEach((line) => {
       const indent = /^\s*/.exec(line)[0].length;
+      const isOrdered = /^\s*\d+\./.test(line);
       while (stack.length > indent + 1) stack.pop();
       while (stack.length < indent + 1) {
-        const ul = document.createElement("ul");
         const parent = stack[stack.length - 1];
         let li = parent.lastElementChild;
         if (!li) { li = document.createElement("li"); parent.appendChild(li); }
-        li.appendChild(ul);
-        stack.push(ul);
+        const nested = document.createElement(isOrdered ? "ol" : "ul");
+        li.appendChild(nested);
+        stack.push(nested);
       }
       const li = document.createElement("li");
-      li.innerHTML = inline(line.replace(/^\s*[-*] /, ""));
+      li.innerHTML = inline(line.replace(/^\s*(?:[-*]|\d+\.)\s*/, ""));
       stack[stack.length - 1].appendChild(li);
     });
     return root.outerHTML;
