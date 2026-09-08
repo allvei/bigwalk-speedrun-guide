@@ -1,0 +1,39 @@
+name: Accept media suggestion
+
+# Maintainer "accepts" a video by adding the `accepted` label to a kind:media issue.
+# The workflow can also be started manually from the Actions tab for a given issue number.
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to accept'
+        required: true
+        type: string
+  issues:
+    types: [labeled]
+
+jobs:
+  accept:
+    if: github.event_name == 'workflow_dispatch' || (github.event.label.name == 'accepted' && contains(github.event.issue.labels.*.name, 'kind:media'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Fetch suggestions branch
+        run: git fetch origin suggestions
+
+      - name: Configure git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Accept media
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event_name == 'workflow_dispatch' && inputs.issue_number || github.event.issue.number }}
+        run: python .github/scripts/accept-media.py

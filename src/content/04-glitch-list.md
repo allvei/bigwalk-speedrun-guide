@@ -10,7 +10,7 @@ order: 4
 Wall Clipping is defined as forcing the player through any kind of wall that you would not normally be able to walk through. This is distinct from an Item Squeeze.
 
 - **Blue House Lantern Clip:** https://youtu.be/OHknYs1KiZU?si=xNkWDc_Rk0T1rxab
-- **Curtain Clip:** https://discord.com/channels/1535292250437976105/1535292252115566674/1535530027842801734
+- **Curtain Clip** by pipack: [/assets/videos/curtain-clip.mp4](/assets/videos/curtain-clip.mp4)
 - **Interrogation Clip:** https://discord.com/channels/1535292250437976105/1535292252115566674/1536186402734084167
 - **Sound House Puzzle Clip:** https://discord.com/channels/1535292250437976105/1535292252115566674/1536322894899183657
 - **Footy Orb Clip:** https://www.youtube.com/watch?v=sTxOxd6I2qc
