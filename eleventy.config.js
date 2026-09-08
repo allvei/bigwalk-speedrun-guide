@@ -32,6 +32,25 @@ export default function (eleventyConfig) {
     );
   });
 
+  /* The contents list is built here rather than in the browser, so it is painted with the
+     rest of the page instead of appearing once scripts run. */
+  eleventyConfig.addTransform("toc", (content, outputPath) => {
+    if (!outputPath || !outputPath.endsWith(".html")) return content;
+    const items = [];
+    const headings = /<(h[234]) id="([^"]+)"[^>]*>([\s\S]*?)<\/\1>/g;
+    let match = headings.exec(content);
+    while (match) {
+      const text = match[3].replace(/<[^>]*>/g, "").replace(/\s*#\s*$/, "").trim();
+      items.push(`<li class="lvl-${match[1][1]}"><a href="#${match[2]}">${text}</a></li>`);
+      match = headings.exec(content);
+    }
+    if (!items.length) return content;
+    return content.replace(
+      '<nav id="toc-nav"></nav>',
+      `<nav id="toc-nav"><ul>${items.join("")}</ul></nav>`
+    );
+  });
+
   eleventyConfig.addCollection("sections", (collection) =>
     collection
       .getFilteredByGlob("src/content/*.md")

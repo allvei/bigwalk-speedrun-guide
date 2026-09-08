@@ -246,6 +246,7 @@
   document.body.appendChild(backdrop);
 
   const form = backdrop.querySelector("form");
+  if (window.watchScrollFade) window.watchScrollFade(form);
   const status = backdrop.querySelector(".status");
   const sectionLabel = backdrop.querySelector("[data-section-label]");
   const quoteLabel = backdrop.querySelector("[data-quote-label]");
@@ -464,6 +465,17 @@
     area.style.height = Math.max(highlight.scrollHeight, 120) + "px";
   }
   fields.body.addEventListener("input", grow);
+
+  /* Mid-animation the box is briefly shorter than its text, so the textarea scrolls to the
+     caret; the styled layer underneath has to follow or the two drift apart. */
+  fields.body.addEventListener("scroll", function () {
+    highlight.scrollTop = fields.body.scrollTop;
+  });
+  fields.body.addEventListener("transitionend", function (event) {
+    if (event.propertyName !== "height") return;
+    fields.body.scrollTop = 0;
+    highlight.scrollTop = 0;
+  });
 
   /* Markdown buttons wrap whatever is selected. Inserting through execCommand keeps the
      browser's own undo stack, which setRangeText would throw away. */

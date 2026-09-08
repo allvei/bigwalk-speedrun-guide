@@ -38,14 +38,17 @@
    native one is hidden: nothing reserves width, and the modal cannot shift the page. */
 html { scrollbar-width: none; }
 html::-webkit-scrollbar { width: 0; height: 0; }
-.page-scrollbar { position: fixed; right: 6px; width: 10px; z-index: 25; }
+.page-scrollbar {
+  position: fixed; right: 6px; width: 10px; z-index: 25;
+  background: var(--bg-elev-2); border-radius: 999px;
+}
 .page-scrollbar[hidden] { display: none; }
 .page-scrollbar-thumb {
-  width: 100%; border-radius: 999px; background: var(--bg-elev-2);
+  width: 100%; border-radius: 999px; background: var(--border);
   transition: background .15s ease;
 }
 .page-scrollbar:hover .page-scrollbar-thumb,
-.page-scrollbar.is-dragging .page-scrollbar-thumb { background: var(--border); }
+.page-scrollbar.is-dragging .page-scrollbar-thumb { background: var(--muted); }
 
 /* One bar everywhere, inset from the edge with no track or arrows behind it.
    scrollbar-width/-color are left to browsers without ::-webkit-scrollbar: in Chrome the
@@ -59,15 +62,19 @@ html::-webkit-scrollbar { width: 0; height: 0; }
 .toc::-webkit-scrollbar, .select-list::-webkit-scrollbar { width: 18px; height: 18px; }
 .modal::-webkit-scrollbar-button, .thread-body::-webkit-scrollbar-button,
 .toc::-webkit-scrollbar-button, .select-list::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+/* The track is a lane of its own, inset from the edge like the page's bar. */
 .modal::-webkit-scrollbar-track, .thread-body::-webkit-scrollbar-track,
-.toc::-webkit-scrollbar-track, .select-list::-webkit-scrollbar-track { background: transparent; }
+.toc::-webkit-scrollbar-track, .select-list::-webkit-scrollbar-track {
+  background: var(--bg-elev-2); border-radius: 999px;
+  border: 4px solid transparent; background-clip: content-box;
+}
 .modal::-webkit-scrollbar-thumb, .thread-body::-webkit-scrollbar-thumb,
 .toc::-webkit-scrollbar-thumb, .select-list::-webkit-scrollbar-thumb {
-  background: var(--bg-elev-2); border-radius: 999px; border: 5px solid transparent; background-clip: content-box;
+  background: var(--border); border-radius: 999px; border: 5px solid transparent; background-clip: content-box;
 }
 .modal::-webkit-scrollbar-thumb:hover, .thread-body::-webkit-scrollbar-thumb:hover,
 .toc::-webkit-scrollbar-thumb:hover, .select-list::-webkit-scrollbar-thumb:hover {
-  background: var(--border); background-clip: content-box;
+  background: var(--muted); background-clip: content-box;
 }
 
 /* Keyboard focus gets the same thin accent ring as the open dropdown, on the item's own edge. */
@@ -119,23 +126,27 @@ a:hover { color: var(--accent-2); }
   transition: max-width .45s ease, padding-left .45s ease;
 }
 /* A resolvable length rather than none, so max-width has something to animate towards. */
-body[data-width="full"] .layout > main {
+html[data-width="full"] .layout > main {
   max-width: calc(100vw - 48px); padding-left: calc(var(--toc-w) + 24px);
 }
 @media (max-width: 1100px) {
-  .layout > main, body[data-width="full"] .layout > main { padding-left: calc(var(--toc-w) + 24px); }
+  .layout > main, html[data-width="full"] .layout > main { padding-left: calc(var(--toc-w) + 24px); }
 }
 @media (max-width: 900px) {
   .layout { padding: 20px 16px 32px; }
-  .layout > main, body[data-width="full"] .layout > main { padding-left: 0; }
+  .layout > main, html[data-width="full"] .layout > main { padding-left: 0; }
   .toc { position: static !important; width: auto !important; max-height: none !important; }
 }
 
 .toc { position: fixed; left: 8px; top: 92px; width: var(--toc-w); max-height: calc(100vh - 100px - var(--footer-h)); overflow: auto; font-size: .88rem; }
 .toc ul { list-style: none; margin: 0; padding: 0; }
-.toc.has-more { mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent); }
-.toc.has-more.has-above { mask-image: linear-gradient(to bottom, transparent, #000 32px calc(100% - 48px), transparent); }
-.toc.has-above { mask-image: linear-gradient(to bottom, transparent, #000 32px); }
+/* A hairline between the contents list and the article. It hangs off the layout rather than
+   the list, which the scroll fade masks. */
+.layout::before {
+  content: ""; position: fixed; left: calc(8px + var(--toc-w) + 10px);
+  top: 78px; bottom: var(--footer-h); width: 1px; background: var(--border);
+}
+@media (max-width: 900px) { .layout::before { display: none; } }
 .toc li a { display: block; padding: 4px 10px; color: var(--muted); text-decoration: none; border-left: 2px solid transparent; }
 .toc li a:hover { color: var(--text); background: var(--bg-elev-2); }
 .toc li a.is-active { color: var(--accent); border-left-color: var(--accent); }
@@ -294,6 +305,7 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 .editor-highlight {
   position: absolute; inset: 0; padding: 9px 11px; border: 1px solid transparent;
   border-radius: 8px; background: transparent; color: var(--text); pointer-events: none;
+  overflow: hidden;
 }
 .editor-highlight code { background: var(--bg-elev-2); border-radius: 4px; }
 .editor-highlight .md-link { color: var(--accent); }
@@ -480,6 +492,16 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 .modal .quote-line[hidden] { display: none; }
 
 #suggestions-toggle.on { color: var(--accent); border-color: var(--accent); }
+
+#width-toggle .width-in, html[data-width="full"] #width-toggle .width-out { display: none; }
+html[data-width="full"] #width-toggle .width-in { display: block; }
+
+/* Any scrolling box fades where its content runs past the edge. */
+.scroll-fade.has-more { mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent); }
+.scroll-fade.has-above { mask-image: linear-gradient(to bottom, transparent, #000 28px); }
+.scroll-fade.has-more.has-above {
+  mask-image: linear-gradient(to bottom, transparent, #000 28px calc(100% - 40px), transparent);
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }

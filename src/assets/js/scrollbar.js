@@ -5,6 +5,20 @@
   const GAP = 8;
   const MIN_THUMB = 40;
 
+  /* Any scrolling box fades out where its content continues past an edge. */
+  window.watchScrollFade = function (el) {
+    el.classList.add("scroll-fade");
+    function fade() {
+      el.classList.toggle("has-more", el.scrollTop + el.clientHeight < el.scrollHeight - 2);
+      el.classList.toggle("has-above", el.scrollTop > 2);
+    }
+    el.addEventListener("scroll", fade, { passive: true });
+    window.addEventListener("resize", fade);
+    if (window.ResizeObserver) new ResizeObserver(fade).observe(el);
+    fade();
+    return fade;
+  };
+
   document.addEventListener("DOMContentLoaded", function () {
     const bar = document.createElement("div");
     bar.className = "page-scrollbar";

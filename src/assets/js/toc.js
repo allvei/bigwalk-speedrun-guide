@@ -9,34 +9,57 @@
     const headings = Array.from(main.querySelectorAll("h2[id], h3[id], h4[id]"));
     if (!headings.length) return;
 
-    const list = document.createElement("ul");
-    const links = headings.map((h) => {
-      const li = document.createElement("li");
-      li.className = "lvl-" + h.tagName[1];
-      const a = document.createElement("a");
-      a.href = "#" + h.id;
-      a.textContent = h.textContent.replace(/\s*#\s*$/, "").trim();
-      /* Nearby jumps glide so the eye can follow them; far ones would take too long. */
+    /* The list itself is rendered at build time; this only wires it up. */
+    let list = nav.querySelector("ul");
+    if (!list) {
+      list = document.createElement("ul");
+      headings.forEach((h) => {
+        const li = document.createElement("li");
+        li.className = "lvl-" + h.tagName[1];
+        const a = document.createElement("a");
+        a.href = "#" + h.id;
+        a.textContent = h.textContent.replace(/\s*#\s*$/, "").trim();
+        li.appendChild(a);
+        list.appendChild(li);
+      });
+      nav.appendChild(list);
+    }
+
+    const links = headings.map((h) => nav.querySelector('a[href="#' + CSS.escape(h.id) + '"]')).filter(Boolean);
+    if (links.length !== headings.length) return;
+
+    /* Jumps glide so the eye can follow them, over a distance-scaled but bounded time; the
+       browser's own smooth scrolling is inconsistent over long documents. */
+    const slow = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    function glide(to) {
+      const from = window.scrollY;
+      const span = to - from;
+      const time = Math.min(700, Math.max(220, Math.abs(span) / 4));
+      if (slow || Math.abs(span) < 2) {
+        window.scrollTo(0, to);
+        return;
+      }
+      const start = performance.now();
+      (function step(now) {
+        const at = Math.min(1, (now - start) / time);
+        const ease = at < 0.5 ? 4 * at * at * at : 1 - Math.pow(-2 * at + 2, 3) / 2;
+        window.scrollTo(0, from + span * ease);
+        if (at < 1) requestAnimationFrame(step);
+      })(start);
+    }
+
+    links.forEach((a, i) => {
       a.addEventListener("click", function (event) {
         event.preventDefault();
-        const top = h.getBoundingClientRect().top + window.scrollY - HEADER_OFFSET;
-        const near = Math.abs(top - window.scrollY) < window.innerHeight * 2;
-        window.scrollTo({ top, behavior: near ? "smooth" : "auto" });
-        history.replaceState(null, "", "#" + h.id);
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        const top = headings[i].getBoundingClientRect().top + window.scrollY - HEADER_OFFSET;
+        glide(Math.max(0, Math.min(max, top)));
+        history.replaceState(null, "", "#" + headings[i].id);
       });
-      li.appendChild(a);
-      list.appendChild(li);
-      return a;
     });
-    nav.appendChild(list);
 
-    /* The list fades where it runs past its box, so a cut-off entry reads as more below. */
     const box = nav.parentElement;
-    function fade() {
-      box.classList.toggle("has-more", box.scrollTop + box.clientHeight < box.scrollHeight - 2);
-      box.classList.toggle("has-above", box.scrollTop > 2);
-    }
-    box.addEventListener("scroll", fade, { passive: true });
+    const fade = window.watchScrollFade ? window.watchScrollFade(box) : function () {};
 
     let active = null;
     function highlight() {

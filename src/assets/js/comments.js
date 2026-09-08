@@ -183,6 +183,7 @@
 
   const panelTitle = panel.querySelector("[data-thread-title]");
   const panelBody = panel.querySelector(".thread-body");
+  if (window.watchScrollFade) window.watchScrollFade(panelBody);
   const panelReply = panel.querySelector("[data-thread-reply]");
   const replyForm = panel.querySelector(".thread-reply");
   let openIssue = null;

@@ -9,10 +9,14 @@
 <meta property="og:description" content="{{ site.description }}">
 <meta property="og:image" content="{{ '/assets/images/big-walk-logo.png' | url }}">
 <link rel="icon" href="{{ '/assets/images/big-walk-logo.png' | url }}">
+<!-- Whatever the browser's default font is, text painted before the stylesheets arrive should
+     already be the site's own sans. -->
+<style>html{font-family:"Noto Sans Deseret","Noto Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}</style>
+<link rel="preload" as="style" href="{{ '/assets/css/style.css' | url }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Deseret&family=Noto+Sans:wght@400;600;700&display=swap">
 <link rel="stylesheet" href="{{ '/assets/css/style.css' | url }}">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Deseret&family=Noto+Sans:wght@400;600;700&display=swap">
 <script>
   window.SITE_CONFIG = {
     repo: {{ site.repo | dump | safe }},
@@ -21,22 +25,17 @@
     maxUploadMB: {{ site.suggestions.maxUploadMB | dump | safe }},
     discordUrl: {{ site.discordUrl | dump | safe }}
   };
+  /* Theme and width are settled before the first paint; applied later the page would visibly
+     jump from the default to the stored setting. */
   (function () {
     var stored = localStorage.getItem("theme");
     if (stored) document.documentElement.dataset.theme = stored;
+    var width = localStorage.getItem("width") === "full" ? "full" : "boxed";
+    document.documentElement.dataset.width = width;
     document.addEventListener("DOMContentLoaded", function () {
-      var width = localStorage.getItem("width") === "full" ? "full" : "boxed";
       var button = document.getElementById("width-toggle");
-      /* chevrons-right-left shrinks back to the column, chevrons-left-right opens it up. */
-      var svg = function (paths) {
-        return '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"' +
-          ' stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + paths + '</svg>';
-      };
-      var OUT = svg('<path d="m9 7-5 5 5 5"/><path d="m15 7 5 5-5 5"/>');
-      var IN = svg('<path d="m20 17-5-5 5-5"/><path d="m4 17 5-5-5-5"/>');
       function apply() {
-        document.body.dataset.width = width;
-        button.innerHTML = width === "full" ? IN : OUT;
+        document.documentElement.dataset.width = width;
         button.title = width === "full" ? "Half width" : "Full width";
         button.setAttribute("aria-label", button.title);
       }
@@ -66,10 +65,19 @@
       <button type="button" class="icon-btn" data-suggest-open data-kind="addition" title="Suggest a change" aria-label="Suggest a change">
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
       </button>
-      <button type="button" class="icon-btn" id="auth-btn" hidden></button>
-      <button type="button" class="icon-btn" id="suggestions-toggle" aria-pressed="false"></button>
-      <button type="button" class="icon-btn" id="width-toggle"></button>
-      <button type="button" class="icon-btn" id="theme-toggle" aria-label="Switch theme" title="Switch theme"></button>
+      <button type="button" class="icon-btn" id="auth-btn" title="Sign in with GitHub" aria-label="Sign in with GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>
+      </button>
+      <button type="button" class="icon-btn" id="suggestions-toggle" aria-pressed="false" title="Show suggestions" aria-label="Show suggestions">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </button>
+      <button type="button" class="icon-btn" id="width-toggle">
+        <svg class="width-out" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 7-5 5 5 5"/><path d="m15 7 5 5-5 5"/></svg>
+        <svg class="width-in" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m20 17-5-5 5-5"/><path d="m4 17 5-5-5-5"/></svg>
+      </button>
+      <button type="button" class="icon-btn" id="theme-toggle" aria-label="Switch theme" title="Switch theme">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+      </button>
     </nav>
   </div>
 </header>
