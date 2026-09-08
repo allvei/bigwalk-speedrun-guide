@@ -116,8 +116,8 @@ The Blue House Lantern Clip video contains several methods of completing the Blu
 
 ### Unsure How to Categorize
 
-- **Dori's reverse item climbing:** https://discord.com/channels/1535292250437976105/1535292252115566674/1536887085569675336 - is this item flying or item climbing?
-- **Item jump by Dori:** https://discord.com/channels/1535292250437976105/1535292252115566674/1537020425035448400 - maybe we can limit item flying but allow item single jumps.
+- **Dori's reverse item climbing:** is this item flying or item climbing? https://discord.com/channels/1535292250437976105/1535292252115566674/1536887085569675336
+- **Item jump by Dori:** maybe we can limit item flying but allow item single jumps. https://discord.com/channels/1535292250437976105/1535292252115566674/1537020425035448400
 
 ### Turnstile Headless Chicken Hat Grab
 

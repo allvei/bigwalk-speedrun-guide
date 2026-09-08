@@ -11,6 +11,11 @@ export default function (eleventyConfig) {
     md.set({ linkify: true, typographer: false }).use(markdownItAnchor, {
       permalink: markdownItAnchor.permalink.headerLink(),
       level: [2, 3, 4],
+      slugify: (heading) =>
+        heading
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, ""),
     })
   );
 

@@ -17,16 +17,16 @@ Here is a ***suggestion table only*** that would hopefully help to guide a major
 
 | **Unrestricted** | **Glitched/No Major Skips** | **Glitchless** |
 | --- | --- | --- |
-| Itemless Wall Climbing/Wall Jumps | Wall Clipping | Rail Slides |
-|  | Limited Item/Prop Flying (used to solve individual puzzles, not sequence break) | Item Throw Boosts |
-|  | Tomato Duplication | Tomato Bumps |
-|  | Item Climbing | Golf Ball Pushing |
-|  | Item Launches | Item Ledge Climbing |
-|  | Ceiling Gliding | Player Juggling |
-|  | Floor Clipping |  |
-|  | Eyaya Glitch (Turnstile Smuggling) |  |
-|  | Item Clip Through Wall/Item Smuggling |  |
-|  | Double Jumps/Slide Jumps |  |
-|  | Item Squeezes |  |
+| [Itemless Wall Climbing/Wall Jumps](#itemless-wall-climb) | [Wall Clipping](#wall-clipping) | [Rail Slides](#rail-slide) |
+|  | [Limited Item/Prop Flying](#item-prop-flying) (used to solve individual puzzles, not sequence break) | [Item Throw Boosts](#item-throw-boost) |
+|  | [Tomato Duplication](#tomato-duplication) | [Tomato Bumps](#tomato-bump) |
+|  | [Item Climbing](#item-climbing) | [Golf Ball Pushing](#golf-ball-push) |
+|  | [Item Launches](#item-launch) | [Item Ledge Climbing](#item-ledge-climb-slide) |
+|  | [Ceiling Gliding](#ceiling-gliding) | [Player Juggling](#player-juggling) |
+|  | [Floor Clipping](#floor-clip) |  |
+|  | [Eyaya Glitch (Turnstile Smuggling)](#eyaya-glitch-turnstile-item-smuggling) |  |
+|  | [Item Clip Through Wall/Item Smuggling](#item-clip-through-wall-item-smuggling) |  |
+|  | [Double Jumps/Slide Jumps](#double-jump-slide-jump) |  |
+|  | [Item Squeezes](#item-squeeze) |  |
 |  | [**Turnstile Headless Chicken Grab**](#turnstile-headless-chicken-hat-grab) |  |
-|  | Item/Prop Flying |  |
+|  | [Item/Prop Flying](#item-prop-flying) |  |
