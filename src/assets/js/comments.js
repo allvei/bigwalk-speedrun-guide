@@ -270,7 +270,10 @@
         <textarea name="body" rows="3" placeholder="Reply" required></textarea>
         <button type="submit" class="btn primary">Reply</button>
       </form>
-      <a class="btn primary" target="_blank" rel="noopener" data-thread-reply>Reply on GitHub</a>
+      <div class="thread-signin" hidden>
+        <button type="button" class="btn primary" data-thread-signin>Sign in with GitHub to reply</button>
+        <a target="_blank" rel="noopener" data-thread-reply>Reply on GitHub instead</a>
+      </div>
     </footer>`;
   document.body.appendChild(panel);
 
@@ -278,8 +281,13 @@
   const panelBody = panel.querySelector(".thread-body");
   if (window.watchScrollFade) window.watchScrollFade(panelBody, 45);
   const panelReply = panel.querySelector("[data-thread-reply]");
+  const signinBlock = panel.querySelector(".thread-signin");
   const replyForm = panel.querySelector(".thread-reply");
   let openIssue = null;
+
+  panel.querySelector("[data-thread-signin]").addEventListener("click", function () {
+    window.location.href = AUTH + "/login?return=" + encodeURIComponent(window.location.href);
+  });
 
   panel.querySelector("[data-thread-close]").addEventListener("click", closePanel);
   document.addEventListener("keydown", (e) => e.key === "Escape" && closePanel());
@@ -366,7 +374,7 @@
     panel.hidden = false;
     requestAnimationFrame(() => panel.classList.add("is-open"));
     replyForm.hidden = !session.signedIn;
-    panelReply.hidden = session.signedIn;
+    signinBlock.hidden = session.signedIn;
     document.body.classList.add("thread-open");
     panelTitle.textContent = issue.title;
     panelReply.href = issue.html_url;

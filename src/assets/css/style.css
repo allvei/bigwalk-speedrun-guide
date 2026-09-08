@@ -296,7 +296,7 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 /* Buttons */
 /* One shape for every button: pills, text or icon. */
 .btn {
-  font: inherit; font-size: .85rem; cursor: pointer;
+  font: inherit; font-size: .85rem; cursor: pointer; text-decoration: none;
   display: inline-flex; align-items: center; justify-content: center; gap: 7px;
   min-height: 32px; background: var(--bg-elev-2); color: var(--text);
   border: 1px solid var(--border); border-radius: 999px; padding: 5px 14px;
@@ -695,6 +695,9 @@ html[data-width="full"] #width-toggle .width-in { display: block; }
   font-size: .9rem;
 }
 .thread-panel > footer a[hidden] { display: none; }
+.thread-signin { display: flex; flex-direction: column; gap: 8px; width: 100%; align-items: center; }
+.thread-signin[hidden] { display: none; }
+.thread-signin a { font-size: .8rem; color: var(--muted); }
 
 /* Custom tooltips: the platform's own appear at the pointer after its own delay in its own
    colours, so tooltips.js parks the title and draws this one under the control instead. */
