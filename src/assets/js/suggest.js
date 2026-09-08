@@ -453,12 +453,14 @@
      widens for long lines. */
   function grow() {
     const area = fields.body;
-    area.style.height = "auto";
-    area.style.height = area.scrollHeight + "px";
     paint();
+    /* Width first: measuring the height in a narrower box counts lines that the wider box
+       will not wrap, and the leftover space stays under the text. */
     const longest = Math.max(...(current.quoteMd || fields.body.value || "").split("\n").map((l) => l.length), 0);
     const width = longest > 90 ? Math.min(1100, 680 + (longest - 90) * 6) : 680;
     form.style.setProperty("--modal-w", width + "px");
+    area.style.height = "auto";
+    area.style.height = area.scrollHeight + "px";
   }
   fields.body.addEventListener("input", grow);
 

@@ -16,6 +16,14 @@
       const a = document.createElement("a");
       a.href = "#" + h.id;
       a.textContent = h.textContent.replace(/\s*#\s*$/, "").trim();
+      /* Nearby jumps glide so the eye can follow them; far ones would take too long. */
+      a.addEventListener("click", function (event) {
+        event.preventDefault();
+        const top = h.getBoundingClientRect().top + window.scrollY - HEADER_OFFSET;
+        const near = Math.abs(top - window.scrollY) < window.innerHeight * 2;
+        window.scrollTo({ top, behavior: near ? "smooth" : "auto" });
+        history.replaceState(null, "", "#" + h.id);
+      });
       li.appendChild(a);
       list.appendChild(li);
       return a;

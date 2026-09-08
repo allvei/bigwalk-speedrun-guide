@@ -37,12 +37,18 @@
 /* The gutter is always there, so locking the page behind the modal cannot shift it sideways. */
 html { scrollbar-gutter: stable; }
 
-/* One thin overlay bar everywhere, inset from the edge with no track behind it. */
-html, .modal, .thread-body, .toc, .select-list {
-  scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+/* One bar everywhere, inset from the edge with no track or arrows behind it.
+   scrollbar-width/-color are left to browsers without ::-webkit-scrollbar: in Chrome the
+   standard properties switch the custom bar off entirely. */
+@supports not selector(::-webkit-scrollbar) {
+  html, .modal, .thread-body, .toc, .select-list {
+    scrollbar-width: thin; scrollbar-color: var(--bg-elev-2) transparent;
+  }
 }
 html::-webkit-scrollbar, .modal::-webkit-scrollbar, .thread-body::-webkit-scrollbar,
-.toc::-webkit-scrollbar, .select-list::-webkit-scrollbar { width: 20px; }
+.toc::-webkit-scrollbar, .select-list::-webkit-scrollbar { width: 20px; height: 20px; }
+html::-webkit-scrollbar-button, .modal::-webkit-scrollbar-button, .thread-body::-webkit-scrollbar-button,
+.toc::-webkit-scrollbar-button, .select-list::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
 html::-webkit-scrollbar-track, .modal::-webkit-scrollbar-track, .thread-body::-webkit-scrollbar-track,
 .toc::-webkit-scrollbar-track, .select-list::-webkit-scrollbar-track { background: transparent; }
 html::-webkit-scrollbar-thumb, .modal::-webkit-scrollbar-thumb, .thread-body::-webkit-scrollbar-thumb,
@@ -56,7 +62,7 @@ html::-webkit-scrollbar-thumb:hover, .modal::-webkit-scrollbar-thumb:hover, .thr
 
 /* Keyboard focus gets the same thin accent ring as the open dropdown, on the item's own edge. */
 :focus-visible {
-  outline: 1px solid var(--accent); outline-offset: 0;
+  outline: 1px solid var(--accent); outline-offset: -1px;
 }
 
 body {
