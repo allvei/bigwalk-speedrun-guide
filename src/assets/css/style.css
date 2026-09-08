@@ -98,6 +98,8 @@ a:hover { color: var(--accent-2); }
 .site-header .updated { margin: 2px 0 0; color: var(--muted); font-size: .8rem; }
 .header-links { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .header-sep { width: 1px; height: 20px; background: var(--border); }
+/* The drawer's fade overlays are pointless once the menu is a row again. */
+@media (min-width: 901px) { .header-links > .fade-edge { display: none; } }
 .header-links a { font-size: .9rem; text-decoration: none; color: var(--muted); }
 .header-links a:hover { color: var(--accent); }
 
@@ -117,6 +119,13 @@ a:hover { color: var(--accent-2); }
   opacity: 0; transition: opacity .2s ease;
 }
 .drawer-backdrop.is-open { opacity: 1; }
+/* The menu lives inside the header, so it can only clear the backdrop if the header does; the
+   header then dims itself instead of being dimmed by the backdrop. */
+body.nav-drawer-open .site-header { z-index: 31; }
+body.nav-drawer-open .site-header::after {
+  content: ""; position: absolute; inset: 0; z-index: 1;
+  background: rgba(0,0,0,.45); pointer-events: none;
+}
 
 @media (max-width: 900px) {
   .site-header .wrap { flex-wrap: nowrap; gap: 12px; }
@@ -193,6 +202,10 @@ html[data-width="full"] .layout > main {
   }
   .toc.is-open { transform: none; pointer-events: auto; }
   .toc li a { padding: 8px 12px; }
+  /* As a drawer the list has padding and a panel background, so its fades have to reach over
+     both to meet the drawer's own edges. */
+  .toc { --fade-x: 8px; --fade-t: 16px; --fade-b: 16px; --fade-bg: var(--bg-elev); }
+  .header-links { --fade-x: 16px; --fade-t: 16px; --fade-b: 16px; --fade-bg: var(--bg-elev); }
 }
 
 /* Content */

@@ -33,9 +33,19 @@
     measure();
     window.addEventListener("resize", measure);
 
+    const phone = window.matchMedia("(max-width: 900px)");
+    let faded = false;
+
     function show(panel, button, open) {
       panel.classList.toggle("is-open", open);
       button.setAttribute("aria-expanded", String(open));
+      if (panel === links) document.body.classList.toggle("nav-drawer-open", open);
+      /* As a drawer the menu can outrun the screen, so it gets the same fades and overlay bar
+         as the other scrolling boxes, but only once it is one. */
+      if (open && !faded && phone.matches && window.watchScrollFade) {
+        faded = true;
+        window.watchScrollFade(links, 31);
+      }
     }
 
     /* Hidden is dropped a frame before the class so the dimming actually transitions. */
