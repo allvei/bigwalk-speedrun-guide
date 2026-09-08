@@ -42,20 +42,27 @@
     function onMove(event) {
       const travel = track - size;
       if (travel <= 0) return;
+      /* A touch that moved on the thumb is a drag of the thumb, never a pan of the page. */
+      event.preventDefault();
       el.scrollTop = fromScroll + ((event.clientY - from) / travel) * (el.scrollHeight - el.clientHeight);
     }
     function onUp() {
       bar.classList.remove("is-dragging");
       document.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerup", onUp);
+      document.removeEventListener("pointercancel", onUp);
     }
     thumb.addEventListener("pointerdown", function (event) {
       event.preventDefault();
+      /* Capture keeps the moves coming to the thumb once the finger leaves it, which on a
+         touchscreen it does immediately. */
+      if (thumb.setPointerCapture) thumb.setPointerCapture(event.pointerId);
       from = event.clientY;
       fromScroll = el.scrollTop;
       bar.classList.add("is-dragging");
-      document.addEventListener("pointermove", onMove);
+      document.addEventListener("pointermove", onMove, { passive: false });
       document.addEventListener("pointerup", onUp);
+      document.addEventListener("pointercancel", onUp);
     });
 
     let resting = 0;
@@ -154,20 +161,24 @@
       const max = document.documentElement.scrollHeight - window.innerHeight;
       const travel = track - size;
       if (travel <= 0) return;
+      event.preventDefault();
       window.scrollTo(0, fromScroll + ((event.clientY - from) / travel) * max);
     }
     function onUp() {
       bar.classList.remove("is-dragging");
       document.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerup", onUp);
+      document.removeEventListener("pointercancel", onUp);
     }
     thumb.addEventListener("pointerdown", function (event) {
       event.preventDefault();
+      if (thumb.setPointerCapture) thumb.setPointerCapture(event.pointerId);
       from = event.clientY;
       fromScroll = window.scrollY;
       bar.classList.add("is-dragging");
-      document.addEventListener("pointermove", onMove);
+      document.addEventListener("pointermove", onMove, { passive: false });
       document.addEventListener("pointerup", onUp);
+      document.addEventListener("pointercancel", onUp);
     });
 
     /* Clicking the empty part of the bar jumps a page towards the click. */

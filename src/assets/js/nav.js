@@ -36,6 +36,20 @@
     const phone = window.matchMedia("(max-width: 900px)");
     let faded = false;
 
+    /* Becoming a drawer gives a panel an off-screen transform it did not have a moment ago,
+       which the browser plays as a panel sliding shut. Transitions are switched off around
+       the crossing, and until the first paint has settled. */
+    function settle() {
+      document.body.classList.add("drawers-settling");
+      window.setTimeout(() => document.body.classList.remove("drawers-settling"), 120);
+    }
+    document.body.classList.add("drawers-settling");
+    window.requestAnimationFrame(() =>
+      window.requestAnimationFrame(() => document.body.classList.remove("drawers-settling"))
+    );
+    if (phone.addEventListener) phone.addEventListener("change", settle);
+    window.matchMedia("(max-width: 700px)").addEventListener("change", settle);
+
     function show(panel, button, open) {
       panel.classList.toggle("is-open", open);
       button.setAttribute("aria-expanded", String(open));

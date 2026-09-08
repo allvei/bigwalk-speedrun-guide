@@ -1,8 +1,13 @@
 (function () {
-  const HEADER_OFFSET = 96;
-  /* A heading landing right under the header sits inside the top fade, so jumps stop a fade's
-     height further down. */
-  const JUMP_OFFSET = HEADER_OFFSET + 38;
+  /* A heading landing right under the header sits inside the top fade, so a jump stops the
+     header's height plus the fade's further down, and the same line decides which entry is
+     the one being read. Both are measured, since the header wraps at narrow widths. */
+  function jumpOffset() {
+    const header = document.querySelector(".site-header");
+    const fade = document.querySelector(".page-fade.at-top");
+    const top = header ? header.getBoundingClientRect().height : 60;
+    return top + (fade ? fade.getBoundingClientRect().height : 48) - 10;
+  }
 
   document.addEventListener("DOMContentLoaded", function () {
     const nav = document.getElementById("toc-nav");
@@ -51,14 +56,25 @@
       })(start);
     }
 
-    links.forEach((a, i) => {
-      a.addEventListener("click", function (event) {
-        event.preventDefault();
-        const max = document.documentElement.scrollHeight - window.innerHeight;
-        const top = headings[i].getBoundingClientRect().top + window.scrollY - JUMP_OFFSET;
-        glide(Math.max(0, Math.min(max, top)));
-        history.replaceState(null, "", "#" + headings[i].id);
-      });
+    /* Any link into the page glides the same way: the contents list, a heading's own anchor,
+       and the cross-references in the tables. */
+    function jumpTo(target) {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const top = target.getBoundingClientRect().top + window.scrollY - jumpOffset();
+      glide(Math.max(0, Math.min(max, top)));
+      history.replaceState(null, "", "#" + target.id);
+    }
+    window.jumpToAnchor = jumpTo;
+
+    document.addEventListener("click", function (event) {
+      const link = event.target.closest('a[href^="#"]');
+      if (!link || event.defaultPrevented || event.metaKey || event.ctrlKey) return;
+      const id = decodeURIComponent(link.getAttribute("href").slice(1));
+      if (!id) return;
+      const target = document.getElementById(id);
+      if (!target || !main.contains(target)) return;
+      event.preventDefault();
+      jumpTo(target);
     });
 
     const box = nav.parentElement;
@@ -70,7 +86,7 @@
       for (let i = 0; i < headings.length; i++) {
         /* Measured against the same line a jump lands on, so the entry marked active is the
            heading actually readable below the fade. */
-        if (headings[i].getBoundingClientRect().top - JUMP_OFFSET <= 1) index = i;
+        if (headings[i].getBoundingClientRect().top - jumpOffset() <= 1) index = i;
         else break;
       }
       const link = links[index];
@@ -91,7 +107,7 @@
       main.style.paddingBottom = "0px";
       const last = headings[headings.length - 1];
       const lastTop = last.getBoundingClientRect().top + window.scrollY;
-      const wanted = lastTop - JUMP_OFFSET + window.innerHeight;
+      const wanted = lastTop - jumpOffset() + window.innerHeight;
       main.style.paddingBottom =
         Math.max(0, Math.round(wanted - document.documentElement.scrollHeight)) + "px";
     }

@@ -42,6 +42,9 @@ html::-webkit-scrollbar { width: 0; height: 0; }
   position: fixed; right: 8px; width: 10px; z-index: 25;
   background: var(--bg-elev-2); border-radius: 999px;
 }
+/* A drag on the thumb is a drag, not the start of a page pan: without this a touch is claimed
+   by the scrolling of whatever lies under the bar. */
+.page-scrollbar, .overlay-bar { touch-action: none; }
 .page-scrollbar[hidden] { display: none; }
 .page-scrollbar-thumb, .overlay-bar-thumb {
   width: 100%; border-radius: 999px; background: var(--border);
@@ -61,6 +64,11 @@ html::-webkit-scrollbar { width: 0; height: 0; }
 .toc::-webkit-scrollbar, .select-list::-webkit-scrollbar { width: 0; height: 0; }
 .overlay-bar {
   position: fixed; width: 10px; background: var(--bg-elev-2); border-radius: 999px;
+}
+/* A box that scrolls keeps its scrolling to itself: at its end the page behind must not take
+   over, which would also snatch a thumb drag mid-way. */
+.modal-backdrop, .modal, .thread-body, .toc, .select-list, .header-links, .editor-preview {
+  overscroll-behavior: contain;
 }
 .overlay-bar[hidden] { display: none; }
 
@@ -142,11 +150,15 @@ body.nav-drawer-open .site-header::after {
     flex-direction: column; align-items: stretch; flex-wrap: nowrap; gap: 8px;
     padding: 16px; overflow: auto;
     background: var(--bg-elev); border-left: 1px solid var(--border);
-    box-shadow: -12px 0 28px rgba(0,0,0,.3);
+    /* The shadow belongs to the open drawer: left on, it draws a dark band down the edge of
+       the page while the drawer is nowhere to be seen. */
+    box-shadow: none;
     transform: translateX(100%); opacity: 1; pointer-events: none;
-    transition: transform .22s ease;
+    transition: transform .22s ease, box-shadow .22s ease;
   }
-  .header-links.is-open { transform: none; pointer-events: auto; }
+  .header-links.is-open {
+    transform: none; pointer-events: auto; box-shadow: -12px 0 28px rgba(0,0,0,.3);
+  }
   .header-links .icon-btn {
     width: 100%; height: 42px; grid-auto-flow: column; justify-content: start;
     gap: 12px; padding: 0 14px; border-radius: var(--radius);
@@ -158,16 +170,17 @@ body.nav-drawer-open .site-header::after {
 /* The table of contents sits at the left edge, out of the flow, so the text stays centred
    on the screen rather than in the space left over beside it. */
 .layout { max-width: none; padding: 28px 24px 40px; }
+/* The centred column keeps clear of the fixed list on its left: as the window narrows the
+   space beside the column runs out before any breakpoint does, so the gap is computed rather
+   than switched on. */
 .layout > main {
   width: 100%; max-width: var(--content-w); margin: 0 auto;
+  padding-left: max(0px, calc(var(--toc-w) + 32px - (100vw - var(--content-w)) / 2));
   transition: max-width .45s ease, padding-left .45s ease;
 }
 /* A resolvable length rather than none, so max-width has something to animate towards. */
 html[data-width="full"] .layout > main {
   max-width: calc(100vw - 48px); padding-left: calc(var(--toc-w) + 24px);
-}
-@media (max-width: 1100px) {
-  .layout > main, html[data-width="full"] .layout > main { padding-left: calc(var(--toc-w) + 24px); }
 }
 @media (max-width: 900px) {
   .layout { padding: 20px 16px 32px; }
@@ -196,11 +209,11 @@ html[data-width="full"] .layout > main {
     left: 0; top: 0; bottom: 0; right: auto; width: 80vw; max-width: 360px; max-height: none;
     z-index: 30; padding: 16px 8px; font-size: .95rem;
     background: var(--bg-elev); border-right: 1px solid var(--border);
-    box-shadow: 12px 0 28px rgba(0,0,0,.3);
+    box-shadow: none;
     transform: translateX(-100%); opacity: 1; pointer-events: none;
-    transition: transform .22s ease;
+    transition: transform .22s ease, box-shadow .22s ease;
   }
-  .toc.is-open { transform: none; pointer-events: auto; }
+  .toc.is-open { transform: none; pointer-events: auto; box-shadow: 12px 0 28px rgba(0,0,0,.3); }
   .toc li a { padding: 8px 12px; }
   /* As a drawer the list has padding and a panel background, so its fades have to reach over
      both to meet the drawer's own edges. */
@@ -478,8 +491,14 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
   background: color-mix(in srgb, var(--accent) 28%, transparent);
   color: inherit; border-bottom: 2px solid var(--accent); border-radius: 0; cursor: pointer;
 }
-.suggestion-mark.mark-start { border-top-left-radius: 3px; border-bottom-left-radius: 3px; padding-left: 1px; }
-.suggestion-mark.mark-end { border-top-right-radius: 3px; border-bottom-right-radius: 3px; padding-right: 1px; }
+/* The padding is given back as margin: a highlight appearing must not reflow the paragraph
+   it sits in. */
+.suggestion-mark.mark-start {
+  border-top-left-radius: 3px; border-bottom-left-radius: 3px; padding-left: 1px; margin-left: -1px;
+}
+.suggestion-mark.mark-end {
+  border-top-right-radius: 3px; border-bottom-right-radius: 3px; padding-right: 1px; margin-right: -1px;
+}
 .suggestion-mark:hover, .suggestion-mark.active {
   background: color-mix(in srgb, var(--accent) 48%, transparent);
 }
@@ -515,12 +534,14 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 }
 
 @media (max-width: 700px) {
+  /* On a phone the thread is a sheet: it slides up from the edge it is attached to, like the
+     drawers, rather than appearing in place. */
   .thread-panel {
     top: auto; left: 0; right: 0; bottom: var(--footer-h); width: 100%; max-width: none;
     height: 65vh; border-left: 0; border-top: 1px solid var(--border);
     box-shadow: 0 -12px 30px rgba(0,0,0,.25);
-    transform: scale(.96);
-    transform-origin: bottom center;
+    opacity: 1; transform: translateY(100%);
+    transition: transform .24s ease;
   }
   .thread-panel.is-open { transform: none; }
 }
@@ -642,3 +663,24 @@ html[data-width="full"] #width-toggle .width-in { display: block; }
   font-size: .9rem;
 }
 .thread-panel > footer a[hidden] { display: none; }
+
+/* Custom tooltips: the platform's own appear at the pointer after its own delay in its own
+   colours, so tooltips.js parks the title and draws this one under the control instead. */
+.tooltip {
+  position: fixed; z-index: 80; max-width: 240px;
+  padding: 5px 10px; border-radius: 6px;
+  background: var(--bg-elev); border: 1px solid var(--border); color: var(--text);
+  font-size: .82rem; line-height: 1.4; text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,.18);
+  opacity: 0; transform: translateY(-2px);
+  transition: opacity .14s ease, transform .14s ease;
+  pointer-events: none;
+}
+.tooltip[hidden] { display: none; }
+.tooltip.is-on { opacity: 1; transform: none; }
+
+/* While the layout crosses the mobile breakpoint or settles on first paint, a drawer gains the
+   off-screen transform it did not have a moment ago. Transitions are switched off so the panel
+   does not play that gain as a slide shut. */
+body.drawers-settling .header-links,
+body.drawers-settling .toc { transition: none; }

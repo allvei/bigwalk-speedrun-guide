@@ -206,7 +206,7 @@
     panel.classList.remove("is-open");
     window.setTimeout(() => {
       if (!panel.classList.contains("is-open")) panel.hidden = true;
-    }, 200);
+    }, 260);
     document.body.classList.remove("thread-open");
     document.querySelectorAll(".suggestion-mark.active").forEach((m) => m.classList.remove("active"));
   }

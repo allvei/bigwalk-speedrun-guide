@@ -222,9 +222,6 @@
         <div class="editor-preview" hidden></div>
       </div>
 
-      <label for="sg-media">Video link</label>
-      <input id="sg-media" name="media" type="url" placeholder="https://">
-
       <label for="sg-file">Video file <span class="hint" data-upload-hint></span></label>
       <input id="sg-file" name="file" type="file" accept="video/*">
 
@@ -232,6 +229,9 @@
       <input id="sg-author" name="author" placeholder="Anonymous">
 
       <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" style="display:none" aria-hidden="true">
+      <!-- A clip suggestion carries the link it came from; a link in the text is how anyone
+           else points at a video, so there is no field to type one into. -->
+      <input type="hidden" id="sg-media" name="media">
       <input type="hidden" name="page">
       <input type="hidden" name="source">
       <input type="hidden" name="section">
