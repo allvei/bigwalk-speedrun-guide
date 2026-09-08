@@ -235,7 +235,14 @@ export default {
     const media = String(data.media || "").slice(0, 500);
     const source = String(data.source || "").slice(0, 200);
     const quote = String(data.quote || "").slice(0, 1000).trim();
+    const quoteMd = String(data.quoteMd || "").slice(0, MAX_FIELD).trim();
     const page = String(data.page || "").slice(0, 500);
+    const title = String(data.title || "").slice(0, 120).trim();
+    const sources = Array.isArray(data.sources)
+      ? data.sources.slice(0, 10).map((file) => String(file).slice(0, 200))
+      : [];
+    const files = sources.length ? sources : source ? [source] : [];
+    const before = quoteMd || quote;
 
     let uploaded = null;
     if (data.upload) {
@@ -244,26 +251,34 @@ export default {
       uploaded = result;
     }
 
+    /* An edit reads best as a diff: what the page says now against what is proposed. */
+    const diff = before
+      ? [
+          "```diff",
+          ...before.split("\n").map((line) => `- ${line}`),
+          ...body.split("\n").map((line) => `+ ${line}`),
+          "```",
+        ].join("\n")
+      : body;
+
     const issue = {
-      title: `[${kind}] ${section}`,
+      title: title || `${section}: suggestion`,
       labels: ["suggestion", `kind:${kind}`],
       body: [
-        quote ? `<!-- anchor: ${JSON.stringify({ quote, section })} -->` : "",
-        `**Section:** ${section}`,
-        source ? `**Source file:** \`src/${source}\`` : "",
-        page ? `**Page:** ${page}` : "",
-        media ? `**Media:** ${media}` : "",
+        quote ? `<!-- anchor: ${JSON.stringify({ quote, section, files })} -->` : "",
+        diff,
+        "",
+        "| | |",
+        "|---|---|",
+        `| Section | ${section} |`,
+        files.length ? `| Source | ${files.map((file) => `\`src/${file}\``).join(", ")} |` : "",
+        page ? `| Page | ${page} |` : "",
+        media ? `| Media | ${media} |` : "",
         uploaded
-          ? `**Uploaded clip:** [${uploaded.path}](https://github.com/${env.REPO}/blob/${uploaded.branch}/${uploaded.path}) on branch \`${uploaded.branch}\``
+          ? `| Uploaded clip | [${uploaded.path}](https://github.com/${env.REPO}/blob/${uploaded.branch}/${uploaded.path}) on \`${uploaded.branch}\` |`
           : "",
-        `**Credit:** ${author || "anonymous"}`,
-        "",
-        quote ? `> ${quote.replace(/\n/g, "\n> ")}` : "",
-        "---",
-        "",
-        body,
-        "",
-        "_Submitted anonymously from the site._",
+        `| Credit | ${author || "anonymous"} |`,
+        `| Submitted | from the site |`,
       ]
         .filter(Boolean)
         .join("\n"),

@@ -24,6 +24,21 @@
   (function () {
     var stored = localStorage.getItem("theme");
     if (stored) document.documentElement.dataset.theme = stored;
+    document.addEventListener("DOMContentLoaded", function () {
+      var width = localStorage.getItem("width") === "full" ? "full" : "boxed";
+      var button = document.getElementById("width-toggle");
+      function apply() {
+        document.body.dataset.width = width;
+        button.textContent = width === "full" ? "Boxed" : "Full width";
+        button.title = width === "full" ? "Centre the text in a column" : "Use the whole window";
+      }
+      apply();
+      button.addEventListener("click", function () {
+        width = width === "full" ? "boxed" : "full";
+        localStorage.setItem("width", width);
+        apply();
+      });
+    });
   })();
 </script>
 </head>
@@ -43,13 +58,14 @@
       <a href="https://github.com/{{ site.repo }}">Source</a>
       <button type="button" class="btn" data-suggest-open data-kind="addition">Suggest</button>
       <button type="button" class="btn" id="auth-btn" hidden></button>
+      <button type="button" class="btn" id="width-toggle"></button>
       <button type="button" class="icon-btn" id="suggestions-toggle" aria-pressed="false"></button>
       <button type="button" class="icon-btn" id="theme-toggle" aria-label="Switch theme" title="Switch theme"></button>
     </nav>
   </div>
 </header>
 
-<div class="wrap layout">
+<div class="layout">
   <aside class="toc" aria-label="Table of contents">
     <nav id="toc-nav"></nav>
   </aside>

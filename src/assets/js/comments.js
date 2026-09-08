@@ -1,18 +1,22 @@
 /**
  * Suggestion threads. Every suggestion is a GitHub issue labelled "suggestion" whose body
  * carries the quoted text in an anchor comment. The page reads open issues anonymously,
- * highlights the quote in place, and shows the issue and its comments in a side panel.
- * Reading needs no login. Signing in with GitHub (OAuth through the worker) lets people reply
- * from the panel; anyone else follows the link to the issue.
+ * highlights the quote in place, and shows the thread in a side panel: an edit renders as a
+ * red/green diff, everything else as light markdown.
  *
- * Highlights are on by default for maintainers (repo write access) and off for everyone else,
- * and the header toggle overrides that per browser.
+ * Reading needs no login. Signing in with GitHub (OAuth through the worker) allows replying
+ * from the panel; everyone else follows the link to the issue.
+ *
+ * Highlights are on by default for maintainers (repo write access) and off for everyone else;
+ * the header toggle overrides that per browser.
  */
 (function () {
   const cfg = window.SITE_CONFIG || {};
   const API = "https://api.github.com/repos/" + cfg.repo;
   const ANCHOR = /<!--\s*anchor:\s*(\{[\s\S]*?\})\s*-->/;
   const STORE = "suggestions-visible";
+  const CACHE = "suggestions-cache";
+  const CACHE_MS = 3 * 60 * 1000;
   const AUTH = (cfg.endpoint || "").replace(/\/$/, "") + "/auth";
   let session = { signedIn: false };
   const ICON =
@@ -22,7 +26,88 @@
     return text.replace(/\s+/g, " ");
   }
 
-  /* Text nodes of #main, flattened so a quote can span elements. */
+  /* ---------- markdown, enough of it for issue bodies ---------- */
+
+  function escapeHtml(text) {
+    return text.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  }
+
+  function inlineMarkdown(text) {
+    return escapeHtml(text)
+      .replace(/`([^`]+)`/g, "<code>$1</code>")
+      .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+      .replace(/(^|[\s(])\*([^*\n]+)\*/g, "$1<em>$2</em>")
+      .replace(/(^|[\s(])_([^_\n]+)_/g, "$1<em>$2</em>")
+      .replace(/~~([^~]+)~~/g, "<del>$1</del>")
+      .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+      .replace(/\n/g, "<br>");
+  }
+
+  /* Splits an issue body into its diff, its metadata table and the rest. */
+  function parseBody(raw) {
+    const body = raw.replace(ANCHOR, "");
+    const meta = [];
+    const text = [];
+    const diff = { before: [], after: [] };
+    let inFence = false;
+
+    body.split("\n").forEach((line) => {
+      if (/^\s*```/.test(line)) {
+        inFence = !inFence;
+        return;
+      }
+      if (inFence) {
+        if (line.startsWith("-")) diff.before.push(line.slice(1).replace(/^ /, ""));
+        else if (line.startsWith("+")) diff.after.push(line.slice(1).replace(/^ /, ""));
+        return;
+      }
+      const row = /^\|\s*([^|]*?)\s*\|\s*(.*?)\s*\|$/.exec(line);
+      if (row) {
+        if (row[1] && !/^-+$/.test(row[1]) && row[2]) meta.push([row[1], row[2]]);
+        return;
+      }
+      /* Older issues used "**Section:** value" lines and a trailing italic note. */
+      const pair = /^\*\*([^*]+):\*\*\s*(.*)$/.exec(line);
+      if (pair) {
+        meta.push([pair[1], pair[2]]);
+        return;
+      }
+      if (/^_.*_$/.test(line.trim()) || /^>/.test(line) || /^---$/.test(line.trim())) return;
+      text.push(line);
+    });
+
+    return { meta, diff, text: text.join("\n").trim() };
+  }
+
+  function diffBlock(diff) {
+    const wrap = document.createElement("div");
+    wrap.className = "diff";
+    diff.before.forEach((line) => wrap.append(diffLine("del", line)));
+    diff.after.forEach((line) => wrap.append(diffLine("add", line)));
+    return wrap;
+  }
+
+  function diffLine(kind, line) {
+    const el = document.createElement("div");
+    el.className = "diff-line " + kind;
+    el.innerHTML = inlineMarkdown(line || " ");
+    return el;
+  }
+
+  function metaBlock(meta) {
+    const list = document.createElement("dl");
+    list.className = "thread-meta";
+    meta.forEach(([key, value]) => {
+      list.append(
+        Object.assign(document.createElement("dt"), { textContent: key }),
+        Object.assign(document.createElement("dd"), { innerHTML: inlineMarkdown(value) })
+      );
+    });
+    return list;
+  }
+
+  /* ---------- highlighting ---------- */
+
   function textIndex(root) {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
       acceptNode: (node) =>
@@ -40,26 +125,39 @@
     return { nodes, text };
   }
 
+  /* A quote crossing element boundaries needs one mark per text node; they are styled as one. */
   function markRange(index, from, to, issue) {
+    const marks = [];
     index.nodes.forEach((entry) => {
       const start = entry.start;
       const end = start + norm(entry.node.nodeValue).length;
       if (end <= from || start >= to) return;
       const node = entry.node;
-      const localFrom = Math.max(0, from - start);
-      const localTo = Math.min(node.nodeValue.length, to - start);
       const range = document.createRange();
-      range.setStart(node, Math.min(localFrom, node.nodeValue.length));
-      range.setEnd(node, Math.min(localTo, node.nodeValue.length));
+      range.setStart(node, Math.min(Math.max(0, from - start), node.nodeValue.length));
+      range.setEnd(node, Math.min(to - start, node.nodeValue.length));
       const mark = document.createElement("mark");
       mark.className = "suggestion-mark";
       mark.dataset.issue = issue.number;
-      mark.title = issue.comments + 1 + " comment" + (issue.comments === 0 ? "" : "s");
+      mark.title = issue.title;
       try {
         range.surroundContents(mark);
+        marks.push(mark);
       } catch (_) {
         /* skip fragments that cross element boundaries mid-node */
       }
+    });
+    if (marks.length) {
+      marks[0].classList.add("mark-start");
+      marks[marks.length - 1].classList.add("mark-end");
+    }
+  }
+
+  function unmark(main) {
+    main.querySelectorAll(".suggestion-mark").forEach((mark) => {
+      const parent = mark.parentNode;
+      mark.replaceWith(...mark.childNodes);
+      parent.normalize();
     });
   }
 
@@ -88,6 +186,40 @@
   const panelReply = panel.querySelector("[data-thread-reply]");
   const replyForm = panel.querySelector(".thread-reply");
   let openIssue = null;
+
+  panel.querySelector("[data-thread-close]").addEventListener("click", closePanel);
+  document.addEventListener("keydown", (e) => e.key === "Escape" && closePanel());
+
+  function closePanel() {
+    panel.hidden = true;
+    document.body.classList.remove("thread-open");
+    document.querySelectorAll(".suggestion-mark.active").forEach((m) => m.classList.remove("active"));
+  }
+
+  function comment(author, avatar, date, text) {
+    const wrap = document.createElement("article");
+    wrap.className = "thread-comment";
+    const head = document.createElement("header");
+    if (avatar) head.append(Object.assign(document.createElement("img"), { src: avatar, alt: "" }));
+    head.append(
+      Object.assign(document.createElement("span"), { className: "who", textContent: author }),
+      Object.assign(document.createElement("time"), { textContent: new Date(date).toLocaleDateString() })
+    );
+    wrap.append(head);
+
+    const parsed = parseBody(text || "");
+    if (parsed.diff.before.length || parsed.diff.after.length) wrap.append(diffBlock(parsed.diff));
+    if (parsed.text) {
+      wrap.append(
+        Object.assign(document.createElement("div"), {
+          className: "thread-text",
+          innerHTML: inlineMarkdown(parsed.text),
+        })
+      );
+    }
+    if (parsed.meta.length) wrap.append(metaBlock(parsed.meta));
+    return wrap;
+  }
 
   replyForm.addEventListener("submit", async function (event) {
     event.preventDefault();
@@ -118,36 +250,6 @@
     }
     button.disabled = false;
   });
-  panel.querySelector("[data-thread-close]").addEventListener("click", closePanel);
-  document.addEventListener("keydown", (e) => e.key === "Escape" && closePanel());
-
-  function closePanel() {
-    panel.hidden = true;
-    document.body.classList.remove("thread-open");
-    document.querySelectorAll(".suggestion-mark.active").forEach((m) => m.classList.remove("active"));
-  }
-
-  function comment(author, avatar, date, text) {
-    const wrap = document.createElement("article");
-    wrap.className = "thread-comment";
-    const head = document.createElement("header");
-    if (avatar) head.append(Object.assign(document.createElement("img"), { src: avatar, alt: "" }));
-    head.append(
-      Object.assign(document.createElement("span"), { className: "who", textContent: author }),
-      Object.assign(document.createElement("time"), { textContent: new Date(date).toLocaleDateString() })
-    );
-    wrap.append(head, Object.assign(document.createElement("p"), { textContent: text }));
-    return wrap;
-  }
-
-  function issueText(body) {
-    return body
-      .replace(ANCHOR, "")
-      .replace(/^\*\*[^\n]*\n/gm, "")
-      .replace(/^>.*$/gm, "")
-      .replace(/^---$/gm, "")
-      .trim();
-  }
 
   async function openThread(issue) {
     openIssue = issue;
@@ -157,17 +259,21 @@
     document.body.classList.add("thread-open");
     panelTitle.textContent = issue.title;
     panelReply.href = issue.html_url;
-    const quoted = Object.assign(document.createElement("blockquote"), {
-      className: "thread-quote",
-      textContent: issue.__quote || "",
-    });
+
     panelBody.replaceChildren(
-      quoted,
-      comment(issue.user ? issue.user.login : "anonymous", issue.user && issue.user.avatar_url, issue.created_at, issueText(issue.body || ""))
+      comment(
+        issue.user ? issue.user.login : "anonymous",
+        issue.user && issue.user.avatar_url,
+        issue.created_at,
+        issue.body || ""
+      )
     );
     if (!issue.comments) return;
 
-    const loading = Object.assign(document.createElement("p"), { className: "thread-loading", textContent: "Loading replies…" });
+    const loading = Object.assign(document.createElement("p"), {
+      className: "thread-loading",
+      textContent: "Loading replies…",
+    });
     panelBody.append(loading);
     try {
       const response = await fetch(issue.comments_url);
@@ -180,14 +286,32 @@
     }
   }
 
-  /* ---------- load ---------- */
+  /* ---------- loading issues ---------- */
 
-  function unmark(main) {
-    main.querySelectorAll(".suggestion-mark").forEach((mark) => {
-      const parent = mark.parentNode;
-      mark.replaceWith(...mark.childNodes);
-      parent.normalize();
-    });
+  /* The API allows 60 anonymous calls an hour per address, so results are cached briefly and
+     a rate-limited response falls back to the last good list rather than dropping highlights. */
+  async function fetchIssues() {
+    let cached = null;
+    try {
+      cached = JSON.parse(sessionStorage.getItem(CACHE) || "null");
+    } catch (_) {
+      /* ignore a corrupt cache */
+    }
+    if (cached && Date.now() - cached.at < CACHE_MS) return cached.issues;
+
+    try {
+      const response = await fetch(API + "/issues?state=open&labels=suggestion&per_page=100");
+      if (!response.ok) return cached ? cached.issues : null;
+      const issues = await response.json();
+      try {
+        sessionStorage.setItem(CACHE, JSON.stringify({ at: Date.now(), issues }));
+      } catch (_) {
+        /* storage full or disabled, fine */
+      }
+      return issues;
+    } catch (_) {
+      return cached ? cached.issues : null;
+    }
   }
 
   let bound = false;
@@ -197,14 +321,8 @@
     if (!main || !cfg.repo) return;
     unmark(main);
 
-    let issues;
-    try {
-      const response = await fetch(API + "/issues?state=open&labels=suggestion&per_page=100");
-      if (!response.ok) return;
-      issues = await response.json();
-    } catch (_) {
-      return;
-    }
+    const issues = await fetchIssues();
+    if (!issues) return;
 
     const index = textIndex(main);
     const byNumber = new Map();
@@ -256,7 +374,8 @@
     }
   }
 
-  /* Header control: sign in with GitHub, or sign out again. */
+  /* ---------- sign-in ---------- */
+
   function renderAuth(button) {
     if (!cfg.endpoint) {
       button.hidden = true;
