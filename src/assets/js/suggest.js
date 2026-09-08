@@ -739,7 +739,16 @@
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!response.ok) throw new Error("HTTP " + response.status);
+      if (!response.ok) {
+        let detail = "HTTP " + response.status;
+        try {
+          const err = await response.json();
+          if (err.error) detail += " — " + err.error;
+        } catch (_) {
+          /* non-JSON body, the status alone is enough */
+        }
+        throw new Error(detail);
+      }
       status.className = "status ok";
       status.textContent = "Sent. Thanks.";
       setTimeout(() => close(true), 1500);

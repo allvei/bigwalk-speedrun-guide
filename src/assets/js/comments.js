@@ -255,6 +255,18 @@
       panelBody.append(comment(posted.user.login, posted.user.avatar_url, posted.created_at, posted.body));
       field.value = "";
       openIssue.comments += 1;
+      /* Keep the sessionStorage cache in step so a reload within the cache window still fetches
+         replies instead of hitting the early return in openThread on a stale comments: 0. */
+      try {
+        const cached = JSON.parse(sessionStorage.getItem(CACHE) || "null");
+        if (cached) {
+          const cachedIssue = cached.issues.find((i) => i.number === openIssue.number);
+          if (cachedIssue) cachedIssue.comments = (cachedIssue.comments || 0) + 1;
+          sessionStorage.setItem(CACHE, JSON.stringify(cached));
+        }
+      } catch (_) {
+        /* corrupt cache is harmless; it just refetches next time */
+      }
     } catch (_) {
       panelBody.append(
         Object.assign(document.createElement("p"), {
