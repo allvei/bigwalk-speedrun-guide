@@ -42,7 +42,7 @@ html, .modal, .thread-body, .toc, .select-list {
   scrollbar-width: thin; scrollbar-color: var(--border) transparent;
 }
 html::-webkit-scrollbar, .modal::-webkit-scrollbar, .thread-body::-webkit-scrollbar,
-.toc::-webkit-scrollbar, .select-list::-webkit-scrollbar { width: 12px; }
+.toc::-webkit-scrollbar, .select-list::-webkit-scrollbar { width: 20px; }
 html::-webkit-scrollbar-track, .modal::-webkit-scrollbar-track, .thread-body::-webkit-scrollbar-track,
 .toc::-webkit-scrollbar-track, .select-list::-webkit-scrollbar-track { background: transparent; }
 html::-webkit-scrollbar-thumb, .modal::-webkit-scrollbar-thumb, .thread-body::-webkit-scrollbar-thumb,
@@ -54,9 +54,9 @@ html::-webkit-scrollbar-thumb:hover, .modal::-webkit-scrollbar-thumb:hover, .thr
   background: var(--border); background-clip: content-box;
 }
 
-/* Keyboard focus gets the same thin accent ring as the open dropdown. */
+/* Keyboard focus gets the same thin accent ring as the open dropdown, on the item's own edge. */
 :focus-visible {
-  outline: 1px solid var(--accent); outline-offset: 2px;
+  outline: 1px solid var(--accent); outline-offset: 0;
 }
 
 body {
@@ -274,7 +274,7 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 .modal textarea::placeholder { color: var(--muted); }
 .editor-highlight {
   position: absolute; inset: 0; padding: 9px 11px; border: 1px solid transparent;
-  border-radius: 8px; background: var(--bg); color: var(--text); pointer-events: none;
+  border-radius: 8px; background: transparent; color: var(--text); pointer-events: none;
 }
 .editor-highlight code { background: var(--bg-elev-2); border-radius: 4px; }
 .editor-highlight .md-link { color: var(--accent); }
@@ -292,9 +292,12 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 .editor-tabs .tab.is-active {
   background: var(--bg); border-color: var(--border); color: var(--text);
 }
-/* Swapping tabs animates the box height while the text fades in, so nothing slides sideways. */
+/* Swapping tabs animates the box height; only the text fades, so the box itself never blinks.
+   The frame lives on the container, which is why the textarea inside it carries no border. */
 .editor-swap { overflow: hidden; transition: height .22s ease; }
-.editor-area, .editor-preview { animation: editor-fade .22s ease; }
+.editor-area { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; }
+.editor-area textarea { border-color: transparent; }
+.editor-highlight, .editor-preview > * { animation: editor-fade .22s ease; }
 @keyframes editor-fade {
   from { opacity: 0; }
   to { opacity: 1; }

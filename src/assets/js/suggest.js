@@ -331,7 +331,12 @@
     quoteLabel.classList.toggle("is-open", open);
     quoteLabel.parentNode.classList.toggle("is-folded", !open);
     quoteMore.textContent = open ? "Show less" : "Show more";
-    quoteLabel.style.maxHeight = (open ? quoteLabel.scrollHeight : QUOTE_FOLDED) + "px";
+    /* Closing has to start from the height it grew to: max-height cannot animate out of none. */
+    quoteLabel.style.maxHeight = quoteLabel.scrollHeight + "px";
+    if (!open) {
+      void quoteLabel.offsetHeight;
+      quoteLabel.style.maxHeight = QUOTE_FOLDED + "px";
+    }
   });
 
   quoteLabel.addEventListener("transitionend", function (event) {
