@@ -44,8 +44,11 @@ referred to below as **WORKER_URL**.
 Then store the token from step 3 (it is prompted for, never written to a file):
 
 ```bash
-wrangler secret put GITHUB_TOKEN
+wrangler secret put GITHUB_TOKEN --config wrangler.toml
 ```
+
+The `--config wrangler.toml` is required: without it wrangler picks up the root `wrangler.jsonc`
+(the static site worker) and the secret lands on the wrong worker.
 
 ## 5. GitHub OAuth app (sign-in and in-page replies)
 
@@ -64,7 +67,7 @@ GITHUB_CLIENT_ID = "Iv1.xxxxxxxxxxxx"
 and the secret into the Worker (prompted, not committed):
 
 ```bash
-wrangler secret put GITHUB_CLIENT_SECRET
+wrangler secret put GITHUB_CLIENT_SECRET --config wrangler.toml
 ```
 
 ## 6. Point the two sides at each other
