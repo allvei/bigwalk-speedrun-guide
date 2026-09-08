@@ -30,6 +30,14 @@
     });
     nav.appendChild(list);
 
+    /* The list fades where it runs past its box, so a cut-off entry reads as more below. */
+    const box = nav.parentElement;
+    function fade() {
+      box.classList.toggle("has-more", box.scrollTop + box.clientHeight < box.scrollHeight - 2);
+      box.classList.toggle("has-above", box.scrollTop > 2);
+    }
+    box.addEventListener("scroll", fade, { passive: true });
+
     let active = null;
     function highlight() {
       let index = 0;
@@ -42,11 +50,12 @@
       if (active) active.classList.remove("is-active");
       link.classList.add("is-active");
       active = link;
-      const box = nav.parentElement.getBoundingClientRect();
+      const bounds = box.getBoundingClientRect();
       const spot = link.getBoundingClientRect();
-      if (spot.top < box.top || spot.bottom > box.bottom) {
+      if (spot.top < bounds.top || spot.bottom > bounds.bottom) {
         link.scrollIntoView({ block: "nearest" });
       }
+      fade();
     }
 
     /* Let the last heading reach the top of the viewport, but no further. */
@@ -73,9 +82,11 @@
     window.addEventListener("resize", function () {
       padTail();
       highlight();
+      fade();
     });
     window.addEventListener("load", padTail);
     padTail();
     highlight();
+    fade();
   });
 })();

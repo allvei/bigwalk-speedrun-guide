@@ -34,28 +34,38 @@
 
 * { box-sizing: border-box; }
 
-/* The gutter is always there, so locking the page behind the modal cannot shift it sideways. */
-html { scrollbar-gutter: stable; }
+/* The page's own bar is drawn by scrollbar.js between the header and the footer, so the
+   native one is hidden: nothing reserves width, and the modal cannot shift the page. */
+html { scrollbar-width: none; }
+html::-webkit-scrollbar { width: 0; height: 0; }
+.page-scrollbar { position: fixed; right: 6px; width: 10px; z-index: 25; }
+.page-scrollbar[hidden] { display: none; }
+.page-scrollbar-thumb {
+  width: 100%; border-radius: 999px; background: var(--bg-elev-2);
+  transition: background .15s ease;
+}
+.page-scrollbar:hover .page-scrollbar-thumb,
+.page-scrollbar.is-dragging .page-scrollbar-thumb { background: var(--border); }
 
 /* One bar everywhere, inset from the edge with no track or arrows behind it.
    scrollbar-width/-color are left to browsers without ::-webkit-scrollbar: in Chrome the
    standard properties switch the custom bar off entirely. */
 @supports not selector(::-webkit-scrollbar) {
-  html, .modal, .thread-body, .toc, .select-list {
+  .modal, .thread-body, .toc, .select-list {
     scrollbar-width: thin; scrollbar-color: var(--bg-elev-2) transparent;
   }
 }
-html::-webkit-scrollbar, .modal::-webkit-scrollbar, .thread-body::-webkit-scrollbar,
-.toc::-webkit-scrollbar, .select-list::-webkit-scrollbar { width: 20px; height: 20px; }
-html::-webkit-scrollbar-button, .modal::-webkit-scrollbar-button, .thread-body::-webkit-scrollbar-button,
+.modal::-webkit-scrollbar, .thread-body::-webkit-scrollbar,
+.toc::-webkit-scrollbar, .select-list::-webkit-scrollbar { width: 18px; height: 18px; }
+.modal::-webkit-scrollbar-button, .thread-body::-webkit-scrollbar-button,
 .toc::-webkit-scrollbar-button, .select-list::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
-html::-webkit-scrollbar-track, .modal::-webkit-scrollbar-track, .thread-body::-webkit-scrollbar-track,
+.modal::-webkit-scrollbar-track, .thread-body::-webkit-scrollbar-track,
 .toc::-webkit-scrollbar-track, .select-list::-webkit-scrollbar-track { background: transparent; }
-html::-webkit-scrollbar-thumb, .modal::-webkit-scrollbar-thumb, .thread-body::-webkit-scrollbar-thumb,
+.modal::-webkit-scrollbar-thumb, .thread-body::-webkit-scrollbar-thumb,
 .toc::-webkit-scrollbar-thumb, .select-list::-webkit-scrollbar-thumb {
-  background: var(--bg-elev-2); border-radius: 999px; border: 3px solid transparent; background-clip: content-box;
+  background: var(--bg-elev-2); border-radius: 999px; border: 5px solid transparent; background-clip: content-box;
 }
-html::-webkit-scrollbar-thumb:hover, .modal::-webkit-scrollbar-thumb:hover, .thread-body::-webkit-scrollbar-thumb:hover,
+.modal::-webkit-scrollbar-thumb:hover, .thread-body::-webkit-scrollbar-thumb:hover,
 .toc::-webkit-scrollbar-thumb:hover, .select-list::-webkit-scrollbar-thumb:hover {
   background: var(--border); background-clip: content-box;
 }
@@ -123,6 +133,9 @@ body[data-width="full"] .layout > main {
 
 .toc { position: fixed; left: 8px; top: 92px; width: var(--toc-w); max-height: calc(100vh - 100px - var(--footer-h)); overflow: auto; font-size: .88rem; }
 .toc ul { list-style: none; margin: 0; padding: 0; }
+.toc.has-more { mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent); }
+.toc.has-more.has-above { mask-image: linear-gradient(to bottom, transparent, #000 32px calc(100% - 48px), transparent); }
+.toc.has-above { mask-image: linear-gradient(to bottom, transparent, #000 32px); }
 .toc li a { display: block; padding: 4px 10px; color: var(--muted); text-decoration: none; border-left: 2px solid transparent; }
 .toc li a:hover { color: var(--text); background: var(--bg-elev-2); }
 .toc li a.is-active { color: var(--accent); border-left-color: var(--accent); }
@@ -302,7 +315,11 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
    The frame lives on the container, which is why the textarea inside it carries no border. */
 .editor-swap { overflow: hidden; transition: height .22s ease; }
 .editor-area { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; }
-.editor-area textarea { border-color: transparent; }
+/* The frame is the container's, so the focus ring belongs there too: on the textarea it would
+   sit a border-width further in than every other field's. */
+.editor-area textarea { border-color: transparent; transition: height .15s ease; }
+.editor-area textarea:focus-visible { outline: none; }
+.editor-area:focus-within { outline: 1px solid var(--accent); outline-offset: -1px; }
 .editor-highlight, .editor-preview > * { animation: editor-fade .22s ease; }
 @keyframes editor-fade {
   from { opacity: 0; }
@@ -313,6 +330,12 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
   background: var(--bg); font-size: .9rem;
 }
 .editor-preview[hidden], .editor-area[hidden], .md-toolbar[hidden] { display: none; }
+/* Previewed headings read as the page's own. */
+.editor-preview h2 { font-size: 1.6rem; margin: 1.2rem 0 .6rem; padding-bottom: .3rem; border-bottom: 1px solid var(--border); }
+.editor-preview h3 { font-size: 1.2rem; margin: 1rem 0 .4rem; }
+.editor-preview h4 { font-size: 1.02rem; margin: 1rem 0 .3rem; color: var(--accent); }
+.editor-preview h5 { font-size: .95rem; margin: 1rem 0 .3rem; color: var(--muted); }
+.editor-preview code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
 .editor-preview ul { margin: .3rem 0; padding-left: 1.3rem; }
 .editor-preview li > ul { margin: 0; }
 .editor-preview > :first-child { margin-top: 0; }
@@ -422,13 +445,14 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
   display: flex; gap: 6px; overflow: hidden; max-width: 0; opacity: 0;
   transition: max-width .22s ease, opacity .22s ease, margin-left .22s ease;
 }
-.heading-group.is-open .heading-levels { max-width: 120px; opacity: 1; margin-left: 2px; }
+/* Tabbing into a level has to reveal it, or the focus ring lands on something invisible. */
+.heading-group.is-open .heading-levels, .heading-group:focus-within .heading-levels { max-width: 120px; opacity: 1; margin-left: 2px; }
 .md-toolbar .icon-btn { width: 28px; height: 28px; }
 /* The unrolled levels read as children of the heading button. */
-.heading-group.is-open { background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 999px; padding: 2px 4px 2px 2px; }
-.heading-group.is-open [data-heading-toggle] { color: var(--accent); }
-.heading-group.is-open .heading-levels .icon-btn { background: transparent; border-color: transparent; }
-.heading-group.is-open .heading-levels .icon-btn:hover { background: var(--bg-elev); border-color: var(--border); color: var(--accent); }
+.heading-group.is-open, .heading-group:focus-within { background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 999px; padding: 2px 4px 2px 2px; }
+.heading-group.is-open [data-heading-toggle], .heading-group:focus-within [data-heading-toggle] { color: var(--accent); }
+.heading-group.is-open .heading-levels .icon-btn, .heading-group:focus-within .heading-levels .icon-btn { background: transparent; border-color: transparent; }
+.heading-group.is-open .heading-levels .icon-btn:hover, .heading-group:focus-within .heading-levels .icon-btn:hover { background: var(--bg-elev); border-color: var(--border); color: var(--accent); }
 .quote-line .quote-link { color: var(--accent); text-decoration: underline; }
 
 .modal .quote-line {

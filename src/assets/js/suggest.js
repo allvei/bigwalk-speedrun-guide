@@ -459,8 +459,9 @@
     const longest = Math.max(...(current.quoteMd || fields.body.value || "").split("\n").map((l) => l.length), 0);
     const width = longest > 90 ? Math.min(1100, 680 + (longest - 90) * 6) : 680;
     form.style.setProperty("--modal-w", width + "px");
-    area.style.height = "auto";
-    area.style.height = area.scrollHeight + "px";
+    /* The highlight layer holds the same text at the same metrics, so its content height is
+       the target without having to reset the textarea to auto and break the transition. */
+    area.style.height = Math.max(highlight.scrollHeight, 120) + "px";
   }
   fields.body.addEventListener("input", grow);
 
