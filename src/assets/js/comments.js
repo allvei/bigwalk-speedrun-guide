@@ -182,10 +182,15 @@
     return el;
   }
 
+  /* Source file, page URL and submission plumbing are for maintainers; regular readers only
+     need the section and who suggested it. */
+  const DEV_META = new Set(["source", "page", "submitted"]);
+
   function metaBlock(meta) {
     const list = document.createElement("dl");
     list.className = "thread-meta";
     meta.forEach(([key, value]) => {
+      if (!session.canWrite && DEV_META.has(key.toLowerCase())) return;
       list.append(
         Object.assign(document.createElement("dt"), { textContent: key }),
         Object.assign(document.createElement("dd"), { innerHTML: inlineMarkdown(value) })
