@@ -1,5 +1,8 @@
 (function () {
   const HEADER_OFFSET = 96;
+  /* A heading landing right under the header sits inside the top fade, so jumps stop a fade's
+     height further down. */
+  const JUMP_OFFSET = HEADER_OFFSET + 38;
 
   document.addEventListener("DOMContentLoaded", function () {
     const nav = document.getElementById("toc-nav");
@@ -52,7 +55,7 @@
       a.addEventListener("click", function (event) {
         event.preventDefault();
         const max = document.documentElement.scrollHeight - window.innerHeight;
-        const top = headings[i].getBoundingClientRect().top + window.scrollY - HEADER_OFFSET;
+        const top = headings[i].getBoundingClientRect().top + window.scrollY - JUMP_OFFSET;
         glide(Math.max(0, Math.min(max, top)));
         history.replaceState(null, "", "#" + headings[i].id);
       });
@@ -86,7 +89,7 @@
       main.style.paddingBottom = "0px";
       const last = headings[headings.length - 1];
       const lastTop = last.getBoundingClientRect().top + window.scrollY;
-      const wanted = lastTop - HEADER_OFFSET + window.innerHeight;
+      const wanted = lastTop - JUMP_OFFSET + window.innerHeight;
       main.style.paddingBottom =
         Math.max(0, Math.round(wanted - document.documentElement.scrollHeight)) + "px";
     }

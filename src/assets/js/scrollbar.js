@@ -122,8 +122,12 @@
 
     function pageFades() {
       const max = document.documentElement.scrollHeight - window.innerHeight;
-      fades[0].style.top = (header ? header.offsetHeight : 0) + "px";
-      fades[1].style.bottom = (footer ? footer.offsetHeight : 0) + "px";
+      /* Measured off the bars themselves and pulled a couple of pixels under them: rounded
+         heights otherwise leave a hairline of unfaded text above the gradient. */
+      const top = header ? header.getBoundingClientRect().bottom : 0;
+      const bottom = footer ? window.innerHeight - footer.getBoundingClientRect().top : 0;
+      fades[0].style.top = Math.max(0, Math.floor(top) - 2) + "px";
+      fades[1].style.bottom = Math.max(0, Math.floor(bottom) - 2) + "px";
       fades[0].classList.toggle("is-on", window.scrollY > 2);
       fades[1].classList.toggle("is-on", max > 2 && window.scrollY < max - 2);
     }
@@ -133,6 +137,15 @@
     window.addEventListener("load", pageFades);
     pageFades();
 
+    /* The bar lights up while the page moves, as though the pointer were on it. */
+    let resting = 0;
+    function woke() {
+      bar.classList.add("is-scrolling");
+      window.clearTimeout(resting);
+      resting = window.setTimeout(() => bar.classList.remove("is-scrolling"), 700);
+    }
+
+    window.addEventListener("scroll", woke, { passive: true });
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule);
     window.addEventListener("load", schedule);

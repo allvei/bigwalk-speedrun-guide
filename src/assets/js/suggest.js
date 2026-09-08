@@ -627,6 +627,12 @@
       opts.kind === "media"
         ? "Anything worth knowing about the clip: who recorded it, what it shows."
         : "What should it say instead?";
+    /* Sized from scratch with the transitions off: otherwise the box animates out of whatever
+       the last suggestion left behind, a wide window shrinking onto a one-line one. */
+    form.classList.add("is-instant");
+    form.style.removeProperty("--modal-w");
+    editorSwap.style.height = "";
+    fields.body.style.height = "";
     backdrop.hidden = false;
     backdrop.classList.remove("is-closing");
     requestAnimationFrame(() => backdrop.classList.add("is-open"));
@@ -634,6 +640,8 @@
     showTab("write");
     grow();
     foldQuote();
+    void form.offsetHeight;
+    requestAnimationFrame(() => form.classList.remove("is-instant"));
     pristine = fields.body.value;
     (opts.wantsFile && !fields.file.disabled ? fields.file : hasSelection ? fields.title : fields.body).focus();
   }
