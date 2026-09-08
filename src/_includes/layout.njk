@@ -54,7 +54,8 @@
 
 <header class="site-header">
   <div class="wrap">
-    <img class="logo" src="{{ '/assets/images/big-walk-logo.png' | url }}" alt="Big Walk logo">
+    <img class="logo logo-light-mode" src="{{ '/assets/images/Big_Walk-logo-dark-alpha.png' | url }}" alt="Big Walk logo">
+    <img class="logo logo-dark-mode" src="{{ '/assets/images/Big_Walk-logo-light-alpha.png' | url }}" alt="Big Walk logo">
     <button type="button" class="icon-btn toc-toggle" id="toc-toggle" aria-expanded="false" title="Contents" aria-label="Contents">
       <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
     </button>
@@ -65,6 +66,7 @@
       <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg>
     </button>
     <nav class="header-links">
+      <p class="drawer-title">Menu</p>
       <a class="icon-btn" href="{{ site.discordUrl }}" title="Discord" aria-label="Discord">
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 4.9A19.8 19.8 0 0 0 15.4 3.4l-.2.4c1.6.4 3 1 4.4 1.9a16.6 16.6 0 0 0-15.2 0c1.3-.9 2.8-1.5 4.4-1.9l-.2-.4A19.8 19.8 0 0 0 3.7 4.9C.9 9 .2 13 .6 17a19.9 19.9 0 0 0 6 3c.4-.6.8-1.2 1.1-1.9a13 13 0 0 1-1.8-.9l.4-.3a14.2 14.2 0 0 0 12.2 0l.5.3c-.6.4-1.2.7-1.9.9.3.7.7 1.3 1.1 1.9a19.8 19.8 0 0 0 6-3c.6-4.7-.7-8.6-3.9-12.1ZM8.3 14.6c-1.2 0-2.1-1.1-2.1-2.4 0-1.3.9-2.4 2.1-2.4s2.2 1.1 2.2 2.4c0 1.3-1 2.4-2.2 2.4Zm7.4 0c-1.2 0-2.1-1.1-2.1-2.4 0-1.3.9-2.4 2.1-2.4s2.2 1.1 2.2 2.4c0 1.3-1 2.4-2.2 2.4Z"/></svg>
         <span class="btn-label">Discord</span>
@@ -108,6 +110,7 @@
 
 <div class="layout">
   <aside class="toc" aria-label="Table of contents">
+    <p class="drawer-title">Contents</p>
     <nav id="toc-nav"></nav>
   </aside>
   <main id="main">
@@ -122,6 +125,7 @@
 <script src="{{ '/assets/js/scrollbar.js' | url }}" defer></script>
 <script src="{{ '/assets/js/embeds.js' | url }}" defer></script>
 <script src="{{ '/assets/js/images.js' | url }}" defer></script>
+<script src="{{ '/assets/js/lists.js' | url }}" defer></script>
 <script src="{{ '/assets/js/toc.js' | url }}" defer></script>
 <script src="{{ '/assets/js/suggest.js' | url }}" defer></script>
 <script src="{{ '/assets/js/comments.js' | url }}" defer></script>

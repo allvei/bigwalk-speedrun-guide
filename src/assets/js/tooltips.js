@@ -14,7 +14,8 @@
   let shown = null;
   let timer = 0;
 
-  document.addEventListener("DOMContentLoaded", () => document.body.appendChild(tip));
+  document.addEventListener("DOMContentLoaded", () => { if (!tip.parentNode) document.body.appendChild(tip); });
+  if (document.body) document.body.appendChild(tip);
 
   function place(el) {
     const spot = el.getBoundingClientRect();

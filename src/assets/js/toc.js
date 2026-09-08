@@ -94,11 +94,15 @@
       if (active) active.classList.remove("is-active");
       link.classList.add("is-active");
       active = link;
+      /* The active entry is scrolled clear of the box's fades, not just its edges, so it
+         never sits half-hidden inside one. */
       const bounds = box.getBoundingClientRect();
       const spot = link.getBoundingClientRect();
-      if (spot.top < bounds.top || spot.bottom > bounds.bottom) {
-        link.scrollIntoView({ block: "nearest" });
-      }
+      const fadeH = 19;
+      const top = bounds.top + fadeH;
+      const bottom = bounds.bottom - fadeH;
+      if (spot.top < top) box.scrollTop -= top - spot.top;
+      else if (spot.bottom > bottom) box.scrollTop += spot.bottom - bottom;
       fade();
     }
 

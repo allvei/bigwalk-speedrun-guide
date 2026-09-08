@@ -5,6 +5,8 @@ order: 1
 
 ## Introduction
 
+![Welcome to Big Walk](/assets/images/Big_Walk-keyart-logo.png)
+
 This guide serves to be a compendium and archive of all strategies and glitches discovered for Big Walk Speedrunning.
 
 To discuss anything about Big Walk speedrunning, you can [join the Discord here](https://discord.gg/C3NWqhNKWt) and find our [Speedrun.com leaderboards here](https://www.speedrun.com/Big_Walk_).

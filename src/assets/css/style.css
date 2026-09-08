@@ -101,6 +101,14 @@ a:hover { color: var(--accent-2); }
 .site-header { background: var(--bg-elev); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 20; }
 .site-header .wrap { position: relative; display: flex; align-items: center; gap: 16px; padding-top: 12px; padding-bottom: 12px; flex-wrap: wrap; }
 .site-header .logo { height: 48px; width: auto; }
+/* Two logos for two themes: the dark logo shows in light mode, the light one in dark. */
+.logo-dark-mode { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .logo-light-mode { display: none; }
+  :root:not([data-theme="light"]) .logo-dark-mode { display: inline; }
+}
+:root[data-theme="dark"] .logo-light-mode { display: none; }
+:root[data-theme="dark"] .logo-dark-mode { display: inline; }
 .site-header .titles { flex: 1 1 260px; }
 .site-header h1 { font-size: 1.15rem; margin: 0; letter-spacing: .2px; }
 .site-header .updated { margin: 2px 0 0; color: var(--muted); font-size: .8rem; }
@@ -120,6 +128,18 @@ a:hover { color: var(--accent-2); }
 /* Labels only exist for the phone menu, where the icons stand on their own rows. */
 .btn-label { display: none; }
 .nav-toggle, .toc-toggle { display: none; }
+
+/* Drawer titles: a visible header inside each phone drawer, since the icon buttons there
+   carry no tooltip of their own. */
+.drawer-title {
+  display: none; margin: 0 6px 8px; padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  font-size: .8rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--muted);
+}
+@media (max-width: 900px) {
+  .header-links .drawer-title, .toc .drawer-title { display: block; }
+}
 
 /* Dims the page behind either phone drawer. */
 .drawer-backdrop {
@@ -224,11 +244,13 @@ html[data-width="full"] .layout > main {
 /* Content */
 .page-updated { margin: 0 0 20px; color: var(--muted); font-size: .82rem; }
 /* Lists read as indented text rather than bulleted columns. A nested list closes tighter than
-   a top-level one, so the item after it still reads as a step up. */
+   a top-level one; the gap before a step back up is added by lists.js, not here, so it only
+   appears where the nesting actually steps out. */
 main ul, main ol, .editor-preview ul, .editor-preview ol {
   list-style: none; padding-inline-start: 1em; list-style-position: inside; margin-block-end: 1em;
 }
-main li ul, main li ol, .editor-preview li ul, .editor-preview li ol { margin-block-end: .5em; }
+main li ul, main li ol, .editor-preview li ul, .editor-preview li ol { margin-block-end: 0; }
+main li ul.is-step-out, main li ol.is-step-out, .editor-preview li ul.is-step-out, .editor-preview li ol.is-step-out { margin-block-end: .5em; }
 main h2 { font-size: 1.6rem; margin: 2.2rem 0 .6rem; padding-bottom: .3rem; border-bottom: 1px solid var(--border); }
 main h3 { font-size: 1.2rem; margin: 1.8rem 0 .4rem; }
 main h4 { font-size: 1.02rem; margin: 1.6rem 0 .3rem; color: var(--accent); }
@@ -456,15 +478,16 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
   min-height: 120px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px;
   background: var(--bg); font-size: .9rem;
 }
-.editor-preview[hidden], .editor-area[hidden], .md-toolbar[hidden] { display: none; }
+.editor-preview[hidden], .editor-area[hidden] { display: none; }
+/* The format toolbar only fades when the preview tab takes over; its position stays put so
+   nothing shifts around it. */
+.md-toolbar.is-hidden { opacity: 0; pointer-events: none; }
 /* Previewed headings read as the page's own. */
 .editor-preview h2 { font-size: 1.6rem; margin: 1.2rem 0 .6rem; padding-bottom: .3rem; border-bottom: 1px solid var(--border); }
 .editor-preview h3 { font-size: 1.2rem; margin: 1rem 0 .4rem; }
 .editor-preview h4 { font-size: 1.02rem; margin: 1rem 0 .3rem; color: var(--accent); }
 .editor-preview h5 { font-size: .95rem; margin: 1rem 0 .3rem; color: var(--muted); }
 .editor-preview code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
-.editor-preview ul { margin: .3rem 0; padding-left: 1.3rem; }
-.editor-preview li > ul { margin: 0; }
 .editor-preview > :first-child { margin-top: 0; }
 .editor-preview > :last-child { margin-bottom: 0; }
 .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
@@ -511,10 +534,10 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 }
 .thread-panel[hidden] { display: none; }
 .thread-panel {
-  transform: scale(.96); transform-origin: right center; opacity: 0;
-  transition: transform .2s ease, opacity .2s ease;
+  transform: translateX(100%); opacity: 1;
+  transition: transform .22s ease;
 }
-.thread-panel.is-open { transform: none; opacity: 1; }
+.thread-panel.is-open { transform: none; }
 .thread-panel > header, .thread-panel > footer {
   display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border);
 }
@@ -563,7 +586,7 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 .thread-meta dt { font-weight: 600; }
 .thread-meta dd { margin: 0; overflow-wrap: anywhere; }
 
-.md-toolbar { display: flex; gap: 6px; align-items: center; }
+.md-toolbar { display: flex; gap: 6px; align-items: center; transition: opacity .15s ease; }
 /* Heading levels unroll to the right of the heading button. */
 .heading-group { display: flex; align-items: center; gap: 6px; }
 .heading-levels {

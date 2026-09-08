@@ -1,4 +1,4 @@
-# Big Walk Strats and Glitches Compendium
+# Big Walk speedrun guide
 
 Static site (Eleventy) for the Big Walk speedrunning compendium, deployed to GitHub Pages.
 

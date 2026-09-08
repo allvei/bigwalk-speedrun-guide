@@ -86,7 +86,7 @@
     depth = depth || 0;
     if (node.nodeType === Node.TEXT_NODE) return node.nodeValue;
     if (node.nodeType !== Node.ELEMENT_NODE) return "";
-    if (node.classList.contains("media") || node.classList.contains("clip-group")) return "";
+    if (node.classList.contains("media") || node.classList.contains("clip-group") || node.classList.contains("suggestion-mark")) return "";
     const inner = Array.from(node.childNodes)
       .map((child) => toMarkdown(child, depth))
       .join("");
@@ -143,6 +143,13 @@
     const holder = document.createElement("div");
     holder.appendChild(range.cloneContents());
     holder.querySelectorAll(".media, .clip-group, script, style").forEach((el) => el.remove());
+    /* Suggestion highlights are page chrome, not part of the text: unwrap them so the quote
+       reads as plain content. */
+    holder.querySelectorAll(".suggestion-mark").forEach((mark) => {
+      const parent = mark.parentNode;
+      mark.replaceWith(...mark.childNodes);
+      parent.normalize();
+    });
     /* Links keep their look but not their behaviour: this is a preview, not navigation. */
     holder.querySelectorAll("a").forEach((link) => {
       const span = document.createElement("span");
@@ -156,6 +163,12 @@
   function selectionMarkdown(range) {
     const holder = document.createElement("div");
     holder.appendChild(range.cloneContents());
+    /* Suggestion marks are page chrome: unwrap them so only the text reaches toMarkdown. */
+    holder.querySelectorAll(".suggestion-mark").forEach((mark) => {
+      const parent = mark.parentNode;
+      mark.replaceWith(...mark.childNodes);
+      parent.normalize();
+    });
     return toMarkdown(holder).replace(/\n{3,}/g, "\n\n").trim();
   }
 
@@ -386,25 +399,31 @@
           return "<p>" + inline(block).replace(/\n/g, "<br>") + "</p>";
         })
         .join("") || '<p class="hint">Nothing to preview yet.</p>';
+    if (window.markListStepOut) window.markListStepOut(preview);
   }
 
-  /* Bullet lines nest by their leading spaces, one space per level. */
+  /* Bullet lines nest by their leading spaces, one space per level. A nested list is a child
+     of the <li> it belongs to, the same shape markdown-it produces, so the shared list CSS
+     applies to both the page and the preview. */
   function list(lines) {
-    let html = "";
-    let depth = 0;
+    const root = document.createElement("ul");
+    const stack = [root];
     lines.forEach((line) => {
       const indent = /^\s*/.exec(line)[0].length;
-      while (indent > depth) {
-        html += "<ul>";
-        depth += 1;
+      while (stack.length > indent + 1) stack.pop();
+      while (stack.length < indent + 1) {
+        const ul = document.createElement("ul");
+        const parent = stack[stack.length - 1];
+        let li = parent.lastElementChild;
+        if (!li) { li = document.createElement("li"); parent.appendChild(li); }
+        li.appendChild(ul);
+        stack.push(ul);
       }
-      while (indent < depth) {
-        html += "</ul>";
-        depth -= 1;
-      }
-      html += "<li>" + inline(line.replace(/^\s*[-*] /, "")) + "</li>";
+      const li = document.createElement("li");
+      li.innerHTML = inline(line.replace(/^\s*[-*] /, ""));
+      stack[stack.length - 1].appendChild(li);
     });
-    return "<ul>" + html + "</ul>".repeat(depth + 1);
+    return root.outerHTML;
   }
 
   function inline(text) {
@@ -416,12 +435,13 @@
       .replace(/\[([^\]\n]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
   }
 
-  /* Swapping tabs animates the box's height only; the text itself just fades. */
+  /* Swapping tabs animates the box's height only; the text itself just fades. The format
+     toolbar fades out and in rather than blinking away, so it stays in the layout's flow. */
   function showTab(name) {
     const writing = name === "write";
     const from = editorSwap.offsetHeight;
     editorArea.hidden = !writing;
-    toolbar.hidden = !writing;
+    toolbar.classList.toggle("is-hidden", !writing);
     preview.hidden = writing;
     if (!writing) renderPreview();
     editorSwap.style.height = "auto";

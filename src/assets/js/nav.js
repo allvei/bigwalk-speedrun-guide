@@ -50,6 +50,24 @@
     if (phone.addEventListener) phone.addEventListener("change", settle);
     window.matchMedia("(max-width: 700px)").addEventListener("change", settle);
 
+    /* On a phone the toggle buttons have no label, so their title is the only hint — but the
+       native tooltip that fires on tap is not wanted, and the drawers carry their own titles.
+       The title is parked on the element (kept for desktop, where tooltips.js draws its own)
+       and restored when the layout crosses back. */
+    function parkTitles(on) {
+      [navBtn, tocBtn].forEach((btn) => {
+        if (on && btn.hasAttribute("title")) {
+          btn.dataset.tip = btn.getAttribute("title");
+          btn.removeAttribute("title");
+        } else if (!on && btn.dataset.tip) {
+          btn.setAttribute("title", btn.dataset.tip);
+          delete btn.dataset.tip;
+        }
+      });
+    }
+    parkTitles(phone.matches);
+    if (phone.addEventListener) phone.addEventListener("change", (e) => parkTitles(e.matches));
+
     function show(panel, button, open) {
       panel.classList.toggle("is-open", open);
       button.setAttribute("aria-expanded", String(open));
