@@ -215,14 +215,33 @@
   let lastFocused = null;
   let current = { quoteMd: "", sources: [] };
 
-  /* Markdown buttons wrap whatever is selected in the textarea. */
+  /* The textarea follows its content; the modal only scrolls once it runs out of screen, and
+     widens for long lines. */
+  function grow() {
+    const area = fields.body;
+    area.style.height = "auto";
+    area.style.height = area.scrollHeight + "px";
+    const longest = Math.max(...(current.quoteMd || fields.body.value || "").split("\n").map((l) => l.length), 0);
+    const width = longest > 90 ? Math.min(1100, 680 + (longest - 90) * 6) : 680;
+    form.style.setProperty("--modal-w", width + "px");
+  }
+  fields.body.addEventListener("input", grow);
+
+  /* Markdown buttons wrap whatever is selected. Inserting through execCommand keeps the
+     browser's own undo stack, which setRangeText would throw away. */
   const WRAP = { bold: ["**", "**"], italic: ["*", "*"], code: ["`", "`"], link: ["[", "](https://)"] };
+  function insert(area, text) {
+    area.focus();
+    if (!document.execCommand || !document.execCommand("insertText", false, text)) {
+      const from = area.selectionStart;
+      const to = area.selectionEnd;
+      area.setRangeText(text, from, to, "end");
+    }
+  }
   form.querySelectorAll("[data-md]").forEach((button) => {
     button.addEventListener("click", function () {
       const area = fields.body;
-      const from = area.selectionStart;
-      const to = area.selectionEnd;
-      const picked = area.value.slice(from, to);
+      const picked = area.value.slice(area.selectionStart, area.selectionEnd);
       let replacement;
       if (button.dataset.md === "list") {
         replacement = (picked || "item")
@@ -233,8 +252,8 @@
         const [before, after] = WRAP[button.dataset.md];
         replacement = before + picked + after;
       }
-      area.setRangeText(replacement, from, to, "end");
-      area.focus();
+      insert(area, replacement);
+      grow();
     });
   });
 
@@ -280,6 +299,7 @@
         : "What should it say instead?";
     backdrop.hidden = false;
     document.body.style.overflow = "hidden";
+    grow();
     (opts.wantsFile && !fields.file.disabled ? fields.file : hasSelection ? fields.title : fields.body).focus();
   }
 
