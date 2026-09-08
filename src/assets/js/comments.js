@@ -398,8 +398,7 @@
       "</svg>";
     button.title = session.signedIn
       ? "Signed in as " + session.login + (session.canWrite ? " (maintainer)" : "") + ". Click to sign out."
-      : "Sign in with GitHub to reply to suggestions";
-    button.setAttribute("aria-label", button.title);
+      : "Sign in with GitHub";
   }
 
   async function whoami() {

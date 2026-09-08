@@ -6,13 +6,13 @@
   "type": "module",
   "scripts": {
     "build": "eleventy",
-    "start": "eleventy --serve --port=8080"
+    "start": "eleventy --serve --port=8080",
+    "deploy": "npm run build && wrangler deploy",
+    "preview": "npm run build && wrangler dev"
   },
   "devDependencies": {
     "@11ty/eleventy": "^3.0.0",
-    "markdown-it-anchor": "^9.2.0"
-  },
-  "dependencies": {
+    "markdown-it-anchor": "^9.2.0",
     "wrangler": "^4.129.1"
   }
 }
