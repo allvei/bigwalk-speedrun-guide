@@ -436,8 +436,45 @@
     );
   }
 
+  /* Our own discard dialog: the browser's confirm() names the site and looks nothing like the page. */
+  const discard = document.createElement("div");
+  discard.className = "modal-backdrop discard-backdrop";
+  discard.hidden = true;
+  discard.innerHTML = `
+    <div class="modal discard-modal" role="alertdialog" aria-modal="true" aria-labelledby="sg-discard-title">
+      <h2 id="sg-discard-title">Discard this suggestion?</h2>
+      <p>Everything you have written here will be lost.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn" data-discard="no">Keep editing</button>
+        <button type="button" class="btn danger" data-discard="yes">Discard</button>
+      </div>
+    </div>`;
+  document.body.appendChild(discard);
+
+  function askDiscard() {
+    discard.hidden = false;
+    requestAnimationFrame(() => discard.classList.add("is-open"));
+    discard.querySelector('[data-discard="no"]').focus();
+  }
+
+  function hideDiscard() {
+    discard.classList.remove("is-open");
+    window.setTimeout(() => {
+      discard.hidden = true;
+    }, 150);
+  }
+
+  discard.querySelector('[data-discard="no"]').addEventListener("click", hideDiscard);
+  discard.querySelector('[data-discard="yes"]').addEventListener("click", function () {
+    hideDiscard();
+    close(true);
+  });
+
   function close(force) {
-    if (!force && dirty() && !window.confirm("Discard this suggestion?")) return;
+    if (!force && dirty()) {
+      askDiscard();
+      return;
+    }
     backdrop.classList.add("is-closing");
     window.setTimeout(function () {
       backdrop.hidden = true;
@@ -577,7 +614,9 @@
      click is worse than one extra click to cancel. */
   form.querySelector("[data-suggest-close]").addEventListener("click", () => close(false));
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !backdrop.hidden) close(false);
+    if (e.key !== "Escape") return;
+    if (!discard.hidden) hideDiscard();
+    else if (!backdrop.hidden) close(false);
   });
   window.addEventListener("suggest:open", (e) => open(e.detail || {}));
 

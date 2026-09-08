@@ -65,7 +65,7 @@ a:hover { color: var(--accent-2); }
 
 .icon-btn {
   display: grid; place-items: center; width: 32px; height: 32px; padding: 0;
-  border: 1px solid var(--border); border-radius: 8px; background: var(--bg-elev-2);
+  border: 1px solid var(--border); border-radius: 999px; background: var(--bg-elev-2);
   color: var(--muted); cursor: pointer;
 }
 .icon-btn:hover { color: var(--accent); border-color: var(--accent); }
@@ -77,7 +77,10 @@ a:hover { color: var(--accent-2); }
   width: 100%; max-width: var(--content-w); margin: 0 auto;
   transition: max-width .25s ease, padding-left .25s ease;
 }
-body[data-width="full"] .layout > main { max-width: none; padding-left: calc(var(--toc-w) + 24px); }
+/* A resolvable length rather than none, so max-width has something to animate towards. */
+body[data-width="full"] .layout > main {
+  max-width: calc(100vw - 48px); padding-left: calc(var(--toc-w) + 24px);
+}
 @media (max-width: 1100px) {
   .layout > main, body[data-width="full"] .layout > main { padding-left: calc(var(--toc-w) + 24px); }
 }
@@ -118,15 +121,17 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 .doc-section, main h2, main h3, main h4 { scroll-margin-top: 96px; }
 
 /* Buttons */
-/* One shape for every button: same radius as the icon buttons they sit next to. */
+/* One shape for every button: pills, text or icon. */
 .btn {
   font: inherit; font-size: .85rem; cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center; gap: 7px;
   min-height: 32px; background: var(--bg-elev-2); color: var(--text);
-  border: 1px solid var(--border); border-radius: 8px; padding: 5px 12px;
+  border: 1px solid var(--border); border-radius: 999px; padding: 5px 14px;
   transition: color .15s ease, border-color .15s ease, background-color .15s ease;
 }
 .btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn.danger { border-color: #c0392b; color: #c0392b; }
+.btn.danger:hover { background: #c0392b; border-color: #c0392b; color: #fff; }
 .btn svg { flex: none; }
 .icon-btn { transition: color .15s ease, border-color .15s ease, background-color .15s ease; }
 .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
@@ -186,9 +191,12 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 .modal-backdrop.is-open { opacity: 1; }
 .modal-backdrop.is-closing { opacity: 0; }
 .modal-backdrop[hidden] { display: none; }
-.modal-backdrop .modal { transform: translateY(8px) scale(.985); transition: transform .18s ease; }
-.modal-backdrop.is-open .modal { transform: none; }
-.modal-backdrop.is-closing .modal { transform: translateY(8px) scale(.985); }
+/* The suggestion box fades in and out; the discard dialog on top of it scales in. */
+.discard-backdrop { z-index: 70; background: rgba(0,0,0,.35); }
+.discard-modal { width: min(400px, 100%); text-align: left; transform: scale(.94); transition: transform .15s ease; }
+.discard-modal h2 { margin: 0 0 6px; font-size: 1.05rem; }
+.discard-modal p { margin: 0; color: var(--muted); font-size: .9rem; }
+.discard-backdrop.is-open .discard-modal { transform: none; }
 /* The modal grows with its content and only scrolls once it runs out of screen. */
 .modal {
   background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius);
@@ -250,8 +258,12 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 .editor-tabs .tab.is-active {
   background: var(--bg); border-color: var(--border); color: var(--text);
 }
-.editor-area, .editor-preview { animation: editor-fade .18s ease; }
-@keyframes editor-fade { from { opacity: 0; } to { opacity: 1; } }
+/* Write and Preview swap with a small scale-in so the box does not just jump size. */
+.editor-area, .editor-preview { animation: editor-scale .18s ease; transform-origin: top center; }
+@keyframes editor-scale {
+  from { opacity: 0; transform: scale(.985); }
+  to { opacity: 1; transform: none; }
+}
 .editor-preview {
   min-height: 120px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px;
   background: var(--bg); font-size: .9rem;
@@ -308,7 +320,10 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
   background: var(--bg-elev); border-left: 1px solid var(--border);
 }
 .thread-panel[hidden] { display: none; }
-.thread-panel { transform: translateX(100%); opacity: 0; transition: transform .2s ease, opacity .2s ease; }
+.thread-panel {
+  transform: scale(.96); transform-origin: right center; opacity: 0;
+  transition: transform .2s ease, opacity .2s ease;
+}
 .thread-panel.is-open { transform: none; opacity: 1; }
 .thread-panel > header, .thread-panel > footer {
   display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border);
@@ -333,7 +348,8 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
     top: auto; left: 0; right: 0; bottom: var(--footer-h); width: 100%; max-width: none;
     height: 65vh; border-left: 0; border-top: 1px solid var(--border);
     box-shadow: 0 -12px 30px rgba(0,0,0,.25);
-    transform: translateY(100%);
+    transform: scale(.96);
+    transform-origin: bottom center;
   }
   .thread-panel.is-open { transform: none; }
 }
@@ -364,6 +380,11 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 }
 .heading-group.is-open .heading-levels { max-width: 120px; opacity: 1; margin-left: 2px; }
 .md-toolbar .icon-btn { width: 28px; height: 28px; }
+/* The unrolled levels read as children of the heading button. */
+.heading-group.is-open { background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 999px; padding: 2px 4px 2px 2px; }
+.heading-group.is-open [data-heading-toggle] { color: var(--accent); }
+.heading-group.is-open .heading-levels .icon-btn { background: transparent; border-color: transparent; }
+.heading-group.is-open .heading-levels .icon-btn:hover { background: var(--bg-elev); border-color: var(--border); color: var(--accent); }
 .quote-line .quote-link { color: var(--accent); text-decoration: underline; }
 
 .modal .quote-line {
@@ -372,8 +393,13 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
   max-height: 190px; overflow: hidden;
 }
 .quote-wrap { position: relative; margin-bottom: 4px; }
-.modal .quote-line { transition: max-height .28s ease; }
-.modal .quote-line.is-open { max-height: 4000px; }
+/* Show more grows the quote out of itself rather than snapping open. */
+.modal .quote-line { transition: max-height .28s ease; transform-origin: top center; }
+.modal .quote-line.is-open { max-height: 4000px; animation: quote-grow .28s ease; }
+@keyframes quote-grow {
+  from { transform: scaleY(.96); opacity: .65; }
+  to { transform: none; opacity: 1; }
+}
 /* While folded, the quote fades into the modal background and Show more floats over the fade. */
 .quote-wrap.is-folded::after {
   content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 70px; pointer-events: none;
