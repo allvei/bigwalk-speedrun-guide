@@ -7,8 +7,4 @@ REPO = "allvei/bigwalk-speedrun-guide"
 BRANCH = "main"
 UPLOAD_BRANCH = "suggestions"
 ALLOWED_ORIGINS = "https://allvei.github.io"
-GITHUB_CLIENT_ID = ""
-
-# Secrets (not stored here):
-#   wrangler secret put GITHUB_TOKEN
-#   wrangler secret put GITHUB_CLIENT_SECRET
+GITHUB_CLIENT_ID = "Iv1.Ov23likbfD99J8sbGlXi"
