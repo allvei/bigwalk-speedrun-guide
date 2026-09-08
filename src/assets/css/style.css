@@ -326,18 +326,21 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 
 .modal .quote-line {
   margin: 0 0 4px; padding: 8px 12px; border-left: 3px solid var(--accent);
-  background: var(--bg-elev-2); color: var(--muted); font-size: .88rem; font-style: italic;
+  background: transparent; color: var(--muted); font-size: .88rem; font-style: italic;
   max-height: 190px; overflow: hidden;
 }
 .quote-wrap { position: relative; margin-bottom: 4px; }
 .modal .quote-line.is-open { max-height: none; }
-/* While folded, the quote fades into its own background and Show more floats over the fade. */
+/* While folded, the quote fades into the modal background and Show more floats over the fade. */
 .quote-wrap.is-folded::after {
   content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 70px; pointer-events: none;
-  background: linear-gradient(to bottom, transparent, var(--bg-elev-2));
+  background: linear-gradient(to bottom, transparent, var(--bg-elev));
 }
+/* Show more straddles the bottom edge of the quote block. */
+.quote-wrap.is-folded { margin-bottom: 18px; }
 .quote-wrap.is-folded .quote-more {
-  position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); z-index: 1;
+  position: absolute; left: 50%; bottom: 0; transform: translate(-50%, 50%); z-index: 1;
+  background: var(--bg-elev);
 }
 .quote-more { display: block; margin: 6px auto 0; font-size: .78rem; padding: 3px 12px; }
 .quote-more[hidden] { display: none; }
