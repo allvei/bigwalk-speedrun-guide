@@ -62,13 +62,15 @@
     });
 
     const box = nav.parentElement;
-    const fade = window.watchScrollFade ? window.watchScrollFade(box) : function () {};
+    const fade = window.watchScrollFade ? window.watchScrollFade(box, 19) : function () {};
 
     let active = null;
     function highlight() {
       let index = 0;
       for (let i = 0; i < headings.length; i++) {
-        if (headings[i].getBoundingClientRect().top - HEADER_OFFSET <= 1) index = i;
+        /* Measured against the same line a jump lands on, so the entry marked active is the
+           heading actually readable below the fade. */
+        if (headings[i].getBoundingClientRect().top - JUMP_OFFSET <= 1) index = i;
         else break;
       }
       const link = links[index];

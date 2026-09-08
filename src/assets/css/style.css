@@ -11,7 +11,7 @@
   --maxw: 1180px;
   --content-w: 780px;
   --toc-w: 250px;
-  --footer-h: 42px;
+  --footer-h: 0px;
   --panel-w: 380px;
   color-scheme: light;
 }
@@ -43,40 +43,26 @@ html::-webkit-scrollbar { width: 0; height: 0; }
   background: var(--bg-elev-2); border-radius: 999px;
 }
 .page-scrollbar[hidden] { display: none; }
-.page-scrollbar-thumb {
+.page-scrollbar-thumb, .overlay-bar-thumb {
   width: 100%; border-radius: 999px; background: var(--border);
   transition: background .15s ease;
 }
 .page-scrollbar:hover .page-scrollbar-thumb,
 .page-scrollbar.is-scrolling .page-scrollbar-thumb,
-.page-scrollbar.is-dragging .page-scrollbar-thumb { background: var(--muted); }
+.page-scrollbar.is-dragging .page-scrollbar-thumb,
+.overlay-bar:hover .overlay-bar-thumb,
+.overlay-bar.is-scrolling .overlay-bar-thumb,
+.overlay-bar.is-dragging .overlay-bar-thumb { background: var(--muted); }
 
-/* One bar everywhere, inset from the edge with no track or arrows behind it.
-   scrollbar-width/-color are left to browsers without ::-webkit-scrollbar: in Chrome the
-   standard properties switch the custom bar off entirely. */
-@supports not selector(::-webkit-scrollbar) {
-  .modal, .thread-body, .toc, .select-list {
-    scrollbar-width: thin; scrollbar-color: var(--bg-elev-2) transparent;
-  }
-}
+/* Every scrolling box is given the same overlay bar by scrollbar.js. A native bar takes its
+   width out of the content, so text reflows the moment a box starts scrolling. */
+.modal, .thread-body, .toc, .select-list { scrollbar-width: none; }
 .modal::-webkit-scrollbar, .thread-body::-webkit-scrollbar,
-.toc::-webkit-scrollbar, .select-list::-webkit-scrollbar { width: 18px; height: 18px; }
-.modal::-webkit-scrollbar-button, .thread-body::-webkit-scrollbar-button,
-.toc::-webkit-scrollbar-button, .select-list::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
-/* The track is a lane of its own, inset from the edge like the page's bar. */
-.modal::-webkit-scrollbar-track, .thread-body::-webkit-scrollbar-track,
-.toc::-webkit-scrollbar-track, .select-list::-webkit-scrollbar-track {
-  background: var(--bg-elev-2); border-radius: 999px;
-  border: 4px solid transparent; background-clip: content-box;
+.toc::-webkit-scrollbar, .select-list::-webkit-scrollbar { width: 0; height: 0; }
+.overlay-bar {
+  position: fixed; width: 10px; background: var(--bg-elev-2); border-radius: 999px;
 }
-.modal::-webkit-scrollbar-thumb, .thread-body::-webkit-scrollbar-thumb,
-.toc::-webkit-scrollbar-thumb, .select-list::-webkit-scrollbar-thumb {
-  background: var(--border); border-radius: 999px; border: 5px solid transparent; background-clip: content-box;
-}
-.modal::-webkit-scrollbar-thumb:hover, .thread-body::-webkit-scrollbar-thumb:hover,
-.toc::-webkit-scrollbar-thumb:hover, .select-list::-webkit-scrollbar-thumb:hover {
-  background: var(--muted); background-clip: content-box;
-}
+.overlay-bar[hidden] { display: none; }
 
 /* Keyboard focus gets the same thin accent ring as the open dropdown, on the item's own edge. */
 :focus-visible {
@@ -85,8 +71,10 @@ html::-webkit-scrollbar { width: 0; height: 0; }
 
 body {
   margin: 0;
-  padding-bottom: var(--footer-h);
+  padding-bottom: 24px;
   background: var(--bg);
+  /* The flash on :active is the click feedback; the platform's own grey box is not. */
+  -webkit-tap-highlight-color: transparent;
   color: var(--text);
   font: 16px/1.65 "Noto Sans Deseret", "Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
@@ -103,7 +91,7 @@ a:hover { color: var(--accent-2); }
 
 /* Header */
 .site-header { background: var(--bg-elev); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 20; }
-.site-header .wrap { display: flex; align-items: center; gap: 16px; padding-top: 12px; padding-bottom: 12px; flex-wrap: wrap; }
+.site-header .wrap { position: relative; display: flex; align-items: center; gap: 16px; padding-top: 12px; padding-bottom: 12px; flex-wrap: wrap; }
 .site-header .logo { height: 48px; width: auto; }
 .site-header .titles { flex: 1 1 260px; }
 .site-header h1 { font-size: 1.15rem; margin: 0; letter-spacing: .2px; }
@@ -118,6 +106,34 @@ a:hover { color: var(--accent-2); }
   color: var(--muted); cursor: pointer;
 }
 .icon-btn:hover { color: var(--accent); border-color: var(--accent); }
+/* Labels only exist for the phone menu, where the icons stand on their own rows. */
+.btn-label { display: none; }
+.nav-toggle, .toc-toggle { display: none; }
+.header-toggles { display: contents; }
+
+@media (max-width: 900px) {
+  .site-header .wrap { flex-wrap: nowrap; gap: 12px; }
+  .site-header .titles { flex: 1 1 auto; min-width: 0; }
+  /* Both menu buttons ride on the right of the title rather than wrapping to their own row. */
+  .header-toggles { display: flex; gap: 8px; margin-left: auto; }
+  .nav-toggle, .toc-toggle { display: grid; }
+  /* Nothing to gain from half width on a phone. */
+  #width-toggle { display: none; }
+  .header-links {
+    position: absolute; top: calc(100% + 8px); right: 12px; z-index: 30;
+    flex-direction: column; align-items: stretch; gap: 6px; padding: 8px; min-width: 210px;
+    background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: 0 12px 28px rgba(0,0,0,.3);
+    transform: scale(.96); transform-origin: top right; opacity: 0; pointer-events: none;
+    transition: transform .16s ease, opacity .16s ease;
+  }
+  .header-links.is-open { transform: none; opacity: 1; pointer-events: auto; }
+  .header-links .icon-btn {
+    width: 100%; height: 38px; grid-auto-flow: column; justify-content: start;
+    gap: 10px; padding: 0 12px;
+  }
+  .btn-label { display: inline; font-size: .9rem; }
+}
 
 /* The table of contents sits at the left edge, out of the flow, so the text stays centred
    on the screen rather than in the space left over beside it. */
@@ -136,7 +152,6 @@ html[data-width="full"] .layout > main {
 @media (max-width: 900px) {
   .layout { padding: 20px 16px 32px; }
   .layout > main, html[data-width="full"] .layout > main { padding-left: 0; }
-  .toc { position: static !important; width: auto !important; max-height: none !important; }
 }
 
 .toc { position: fixed; left: 8px; top: 92px; width: var(--toc-w); max-height: calc(100vh - 100px - var(--footer-h)); overflow: auto; font-size: .88rem; }
@@ -154,7 +169,27 @@ html[data-width="full"] .layout > main {
 .toc .lvl-3 a { padding-left: 22px; }
 .toc .lvl-4 a { padding-left: 34px; font-size: .84rem; }
 
+@media (max-width: 900px) {
+  /* On a phone the contents list is a menu of its own: in the flow it would be a screenful of
+     links to scroll past before reaching the text. */
+  .toc {
+    left: 8px; right: 8px; width: auto; top: calc(var(--header-h, 84px) + 8px);
+    max-height: 60vh; z-index: 30; padding: 8px;
+    background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: 0 12px 28px rgba(0,0,0,.3);
+    transform: scale(.96); transform-origin: top left; opacity: 0; pointer-events: none;
+    transition: transform .16s ease, opacity .16s ease;
+  }
+  .toc.is-open { transform: none; opacity: 1; pointer-events: auto; }
+}
+
 /* Content */
+/* Lists read as indented text rather than bulleted columns. A nested list closes tighter than
+   a top-level one, so the item after it still reads as a step up. */
+main ul, main ol, .editor-preview ul, .editor-preview ol {
+  list-style: none; padding-inline-start: 1em; list-style-position: inside; margin-block-end: 1em;
+}
+main li ul, main li ol, .editor-preview li ul, .editor-preview li ol { margin-block-end: .5em; }
 main h2 { font-size: 1.6rem; margin: 2.2rem 0 .6rem; padding-bottom: .3rem; border-bottom: 1px solid var(--border); }
 main h3 { font-size: 1.2rem; margin: 1.8rem 0 .4rem; }
 main h4 { font-size: 1.02rem; margin: 1.6rem 0 .3rem; color: var(--accent); }
@@ -187,6 +222,20 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
   transition: color .15s ease, border-color .15s ease, background-color .15s ease;
 }
 .btn:hover { border-color: var(--accent); color: var(--accent); }
+/* A click flashes the button bright and fades back out, so a tap that did something looks
+   like it did. */
+.btn:active, .icon-btn:active, .tab:active, .context-menu button:active, .select-list li:active {
+  background: color-mix(in srgb, var(--accent) 30%, var(--bg-elev-2));
+  border-color: var(--accent); color: var(--accent);
+  transition: none;
+}
+/* The tap flash is an overlay so it fades out over whatever background the button has. */
+.is-flash { position: relative; }
+.is-flash::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: var(--accent); animation: flash .3s ease-out forwards;
+}
+@keyframes flash { from { opacity: .35; } to { opacity: 0; } }
 .btn.danger { border-color: #c0392b; color: #c0392b; }
 .btn.danger:hover { background: #c0392b; border-color: #c0392b; color: #fff; }
 .btn svg { flex: none; }
@@ -334,10 +383,13 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 /* Swapping tabs animates the box height; only the text fades, so the box itself never blinks.
    The frame lives on the container, which is why the textarea inside it carries no border. */
 .editor-swap { overflow: hidden; transition: height .22s ease; }
-.editor-area { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; }
+.editor-area {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  overflow: hidden; transition: height .15s ease;
+}
 /* The frame is the container's, so the focus ring belongs there too: on the textarea it would
    sit a border-width further in than every other field's. */
-.editor-area textarea { border-color: transparent; transition: height .15s ease; }
+.editor-area textarea { border-color: transparent; overflow: hidden; }
 .editor-area textarea:focus-visible { outline: none; }
 .editor-area:focus-within { outline: 1px solid var(--accent); outline-offset: -1px; }
 .editor-highlight, .editor-preview > * { animation: editor-fade .22s ease; }
@@ -378,16 +430,6 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 }
 .context-menu button:hover { background: var(--bg-elev-2); color: var(--accent); }
 
-.site-footer {
-  position: fixed; bottom: 0; left: 0; right: 0; height: var(--footer-h); z-index: 30;
-  display: flex; align-items: center;
-  border-top: 1px solid var(--border); background: var(--bg-elev);
-  color: var(--muted); font-size: .82rem;
-}
-.site-footer .wrap { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
-/* Controls sit at the far right of the bar, the notes at the left. */
-.site-footer p:last-child { margin-left: auto; }
-.site-footer p { margin: 0; }
 
 /* Suggestion highlights and thread panel */
 .suggestion-mark {

@@ -5,15 +5,80 @@
   const GAP = 8;
   const MIN_THUMB = 40;
 
+  /* The same overlay bar as the page's, for a box that scrolls inside the page: drawn beside
+     the box rather than inside it, so the content keeps the full width either way. */
+  function overlayBar(el, z) {
+    const bar = document.createElement("div");
+    bar.className = "overlay-bar";
+    bar.hidden = true;
+    bar.style.zIndex = String(z);
+    const thumb = document.createElement("div");
+    thumb.className = "overlay-bar-thumb";
+    bar.appendChild(thumb);
+    document.body.appendChild(bar);
+
+    let track = 0;
+    let size = 0;
+
+    function place() {
+      const rect = el.getBoundingClientRect();
+      const over = el.scrollHeight - el.clientHeight;
+      track = rect.height - GAP * 2;
+      if (over < 2 || !rect.height || el.offsetParent === null) {
+        bar.hidden = true;
+        return;
+      }
+      bar.hidden = false;
+      bar.style.top = rect.top + GAP + "px";
+      bar.style.left = rect.right - GAP - 10 + "px";
+      bar.style.height = track + "px";
+      size = Math.max(Math.min(MIN_THUMB, track), Math.round((track * el.clientHeight) / el.scrollHeight));
+      thumb.style.height = size + "px";
+      thumb.style.transform = "translateY(" + (el.scrollTop / over) * (track - size) + "px)";
+    }
+
+    let from = 0;
+    let fromScroll = 0;
+    function onMove(event) {
+      const travel = track - size;
+      if (travel <= 0) return;
+      el.scrollTop = fromScroll + ((event.clientY - from) / travel) * (el.scrollHeight - el.clientHeight);
+    }
+    function onUp() {
+      bar.classList.remove("is-dragging");
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+    }
+    thumb.addEventListener("pointerdown", function (event) {
+      event.preventDefault();
+      from = event.clientY;
+      fromScroll = el.scrollTop;
+      bar.classList.add("is-dragging");
+      document.addEventListener("pointermove", onMove);
+      document.addEventListener("pointerup", onUp);
+    });
+
+    let resting = 0;
+    function woke() {
+      bar.classList.add("is-scrolling");
+      window.clearTimeout(resting);
+      resting = window.setTimeout(() => bar.classList.remove("is-scrolling"), 700);
+    }
+    el.addEventListener("scroll", woke, { passive: true });
+    return place;
+  }
+
   /* Any scrolling box fades out where its content continues past an edge. The gradients are
      sticky children rather than a mask on the box itself, which would fade its scrollbar with
      the content. */
-  window.watchScrollFade = function (el) {
+  window.watchScrollFade = function (el, z) {
     el.classList.add("scroll-fade");
     const top = document.createElement("div");
     top.className = "fade-edge at-top";
     const bottom = document.createElement("div");
     bottom.className = "fade-edge at-bottom";
+
+    const place = overlayBar(el, z || 45);
 
     function fade() {
       /* Boxes whose content is replaced wholesale, like a thread, lose the edges or leave them
@@ -22,8 +87,10 @@
       if (el.lastChild !== bottom) el.appendChild(bottom);
       el.classList.toggle("has-more", el.scrollTop + el.clientHeight < el.scrollHeight - 2);
       el.classList.toggle("has-above", el.scrollTop > 2);
+      place();
     }
     el.addEventListener("scroll", fade, { passive: true });
+    window.addEventListener("scroll", fade, { passive: true });
     window.addEventListener("resize", fade);
     if (window.ResizeObserver) new ResizeObserver(fade).observe(el);
     if (window.MutationObserver) new MutationObserver(fade).observe(el, { childList: true });

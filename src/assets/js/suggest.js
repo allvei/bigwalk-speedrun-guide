@@ -246,7 +246,7 @@
   document.body.appendChild(backdrop);
 
   const form = backdrop.querySelector("form");
-  if (window.watchScrollFade) window.watchScrollFade(form);
+  if (window.watchScrollFade) window.watchScrollFade(form, 55);
   const status = backdrop.querySelector(".status");
   const sectionLabel = backdrop.querySelector("[data-section-label]");
   const quoteLabel = backdrop.querySelector("[data-quote-label]");
@@ -467,7 +467,11 @@
     highlight.style.bottom = "auto";
     const target = Math.max(highlight.offsetHeight, 120);
     highlight.style.bottom = "";
+    /* The textarea takes its full height at once and the frame around it animates: sized the
+       other way round the box is briefly shorter than its text, so it scrolls to the caret and
+       the whole text slides up instead of the box growing downwards. */
     area.style.height = target + "px";
+    editorArea.style.height = target + 2 + "px";
   }
   fields.body.addEventListener("input", grow);
 
@@ -632,6 +636,7 @@
     form.classList.add("is-instant");
     form.style.removeProperty("--modal-w");
     editorSwap.style.height = "";
+    editorArea.style.height = "";
     fields.body.style.height = "";
     backdrop.hidden = false;
     backdrop.classList.remove("is-closing");

@@ -59,14 +59,34 @@
       <h1>{{ site.title }}</h1>
       <p class="updated">Updated {{ site.updated }}</p>
     </div>
+    <div class="header-toggles">
+    <button type="button" class="icon-btn toc-toggle" id="toc-toggle" aria-expanded="false" title="Contents" aria-label="Contents">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
+    </button>
+    <button type="button" class="icon-btn nav-toggle" id="nav-toggle" aria-expanded="false" title="Menu" aria-label="Menu">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg>
+    </button>
+    </div>
     <nav class="header-links">
-      <a href="{{ site.discordUrl }}">Discord</a>
-      <a href="{{ site.speedrunUrl }}">Leaderboards</a>
+      <a class="icon-btn" href="{{ site.discordUrl }}" title="Discord" aria-label="Discord">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 4.9A19.8 19.8 0 0 0 15.4 3.4l-.2.4c1.6.4 3 1 4.4 1.9a16.6 16.6 0 0 0-15.2 0c1.3-.9 2.8-1.5 4.4-1.9l-.2-.4A19.8 19.8 0 0 0 3.7 4.9C.9 9 .2 13 .6 17a19.9 19.9 0 0 0 6 3c.4-.6.8-1.2 1.1-1.9a13 13 0 0 1-1.8-.9l.4-.3a14.2 14.2 0 0 0 12.2 0l.5.3c-.6.4-1.2.7-1.9.9.3.7.7 1.3 1.1 1.9a19.8 19.8 0 0 0 6-3c.6-4.7-.7-8.6-3.9-12.1ZM8.3 14.6c-1.2 0-2.1-1.1-2.1-2.4 0-1.3.9-2.4 2.1-2.4s2.2 1.1 2.2 2.4c0 1.3-1 2.4-2.2 2.4Zm7.4 0c-1.2 0-2.1-1.1-2.1-2.4 0-1.3.9-2.4 2.1-2.4s2.2 1.1 2.2 2.4c0 1.3-1 2.4-2.2 2.4Z"/></svg>
+        <span class="btn-label">Discord</span>
+      </a>
+      <a class="icon-btn" href="{{ site.speedrunUrl }}" title="Leaderboards" aria-label="Leaderboards">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+        <span class="btn-label">Leaderboards</span>
+      </a>
+      <a class="icon-btn" href="https://github.com/{{ site.repo }}" title="Source on GitHub" aria-label="Source on GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.2.8-.5v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.1 1.7 1.1 1 1.8 2.7 1.3 3.4 1 .1-.7.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.2c0 .3.2.6.8.5A11.5 11.5 0 0 0 12 .5Z"/></svg>
+        <span class="btn-label">Source</span>
+      </a>
       <button type="button" class="icon-btn" data-suggest-open data-kind="addition" title="Suggest a change" aria-label="Suggest a change">
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+        <span class="btn-label">Suggest a change</span>
       </button>
       <button type="button" class="icon-btn" id="auth-btn" title="Sign in with GitHub" aria-label="Sign in with GitHub">
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>
+        <span class="btn-label">Sign in</span>
       </button>
       <button type="button" class="icon-btn" id="suggestions-toggle" aria-pressed="false" title="Show suggestions" aria-label="Show suggestions">
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -74,9 +94,11 @@
       <button type="button" class="icon-btn" id="width-toggle">
         <svg class="width-out" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 7-5 5 5 5"/><path d="m15 7 5 5-5 5"/></svg>
         <svg class="width-in" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m20 17-5-5 5-5"/><path d="m4 17 5-5-5-5"/></svg>
+        <span class="btn-label">Page width</span>
       </button>
       <button type="button" class="icon-btn" id="theme-toggle" aria-label="Switch theme" title="Switch theme">
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+        <span class="btn-label">Switch theme</span>
       </button>
     </nav>
   </div>
@@ -91,14 +113,7 @@
   </main>
 </div>
 
-<footer class="site-footer">
-  <div class="wrap">
-    <p>Select any text and right-click to suggest a change.</p>
-    <p><a href="https://github.com/{{ site.repo }}">Source</a></p>
-    <p><a href="https://github.dev/{{ site.repo }}">Edit on GitHub</a></p>
-  </div>
-</footer>
-
+<script src="{{ '/assets/js/nav.js' | url }}" defer></script>
 <script src="{{ '/assets/js/theme.js' | url }}" defer></script>
 <script src="{{ '/assets/js/scrollbar.js' | url }}" defer></script>
 <script src="{{ '/assets/js/embeds.js' | url }}" defer></script>

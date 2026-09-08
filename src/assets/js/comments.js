@@ -19,8 +19,18 @@
   const CACHE_MS = 3 * 60 * 1000;
   const AUTH = (cfg.endpoint || "").replace(/\/$/, "") + "/auth";
   let session = { signedIn: false };
-  const ICON =
-    '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+  const SVG =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+  const ICON = SVG + '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+  /* Shown while suggestions are on: the button then turns them off. */
+  const ICON_OFF =
+    SVG +
+    '<path d="M21 15V5a2 2 0 0 0-2-2H9"/><path d="M3.6 3.6A2 2 0 0 0 3 5v16l4-4h10"/><path d="m2 2 20 20"/></svg>';
+
+  /* Header buttons are icon-only until the phone menu, where the label is the row's text. */
+  function label(text) {
+    return '<span class="btn-label">' + text + "</span>";
+  }
 
   function norm(text) {
     return text.replace(/\s+/g, " ");
@@ -183,7 +193,7 @@
 
   const panelTitle = panel.querySelector("[data-thread-title]");
   const panelBody = panel.querySelector(".thread-body");
-  if (window.watchScrollFade) window.watchScrollFade(panelBody);
+  if (window.watchScrollFade) window.watchScrollFade(panelBody, 45);
   const panelReply = panel.querySelector("[data-thread-reply]");
   const replyForm = panel.querySelector(".thread-reply");
   let openIssue = null;
@@ -366,8 +376,8 @@
   }
 
   function apply(button, on) {
-    button.innerHTML = ICON;
     button.title = on ? "Hide suggestions" : "Show suggestions";
+    button.innerHTML = (on ? ICON_OFF : ICON) + label(button.title);
     button.setAttribute("aria-label", button.title);
     button.setAttribute("aria-pressed", String(on));
     button.classList.toggle("on", on);
@@ -395,7 +405,8 @@
       (session.signedIn
         ? '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>'
         : '<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/>') +
-      "</svg>";
+      "</svg>" +
+      label(session.signedIn ? "Sign out" : "Sign in");
     button.title = session.signedIn
       ? "Signed in as " + session.login + (session.canWrite ? " (maintainer)" : "") + ". Click to sign out."
       : "Sign in with GitHub";

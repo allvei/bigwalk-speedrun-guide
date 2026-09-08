@@ -16,8 +16,9 @@
 
   function render(button) {
     const next = current() === "dark" ? "light" : "dark";
-    button.innerHTML = ICONS[next];
     button.title = "Switch to " + next + " mode";
+    /* The label is invisible until the phone menu, where every row reads as text. */
+    button.innerHTML = ICONS[next] + '<span class="btn-label">' + button.title + "</span>";
     button.setAttribute("aria-label", button.title);
   }
 
