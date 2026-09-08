@@ -190,10 +190,43 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 }
 .modal input[type="file"] { padding: 7px; }
 .modal input:disabled { opacity: .5; }
-.modal textarea {
-  min-height: 120px; resize: none; overflow: hidden;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .85rem;
+/* The editor is a styled layer with a transparent textarea on top, so markdown reads as
+   formatted text while its syntax stays visible and editable. */
+.editor-area { position: relative; }
+.modal textarea, .editor-highlight {
+  min-height: 120px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .85rem;
+  line-height: 1.55; letter-spacing: normal; white-space: pre-wrap; overflow-wrap: break-word;
 }
+.modal textarea {
+  resize: none; overflow: hidden; position: relative; background: transparent;
+  color: transparent; caret-color: var(--text);
+}
+.modal textarea::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); }
+.modal textarea::placeholder { color: var(--muted); }
+.editor-highlight {
+  position: absolute; inset: 0; padding: 9px 11px; border: 1px solid transparent;
+  border-radius: 8px; background: var(--bg); color: var(--text); pointer-events: none;
+}
+.editor-highlight code { background: var(--bg-elev-2); border-radius: 4px; }
+.editor-highlight .md-link { color: var(--accent); }
+.editor-highlight .md-heading { font-weight: 700; }
+.editor-highlight .md-mark { color: var(--muted); }
+
+.editor-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+.editor-tabs .tab {
+  font: inherit; font-size: .82rem; cursor: pointer; padding: 5px 12px;
+  background: none; border: 1px solid transparent; border-radius: 8px 8px 0 0; color: var(--muted);
+}
+.editor-tabs .tab.is-active {
+  background: var(--bg); border-color: var(--border); border-bottom-color: var(--bg); color: var(--text);
+}
+.editor-preview {
+  min-height: 120px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--bg); font-size: .9rem;
+}
+.editor-preview[hidden], .editor-area[hidden], .md-toolbar[hidden] { display: none; }
+.editor-preview > :first-child { margin-top: 0; }
+.editor-preview > :last-child { margin-bottom: 0; }
 .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
 .modal .status { margin-top: 12px; font-size: .88rem; }
 .modal .status.error { color: #c0392b; }
@@ -289,7 +322,15 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 .modal .quote-line {
   margin: 0 0 4px; padding: 8px 12px; border-left: 3px solid var(--accent);
   background: var(--bg-elev-2); color: var(--muted); font-size: .88rem; font-style: italic;
+  position: relative; max-height: 190px; overflow: hidden;
 }
+.modal .quote-line.is-open { max-height: none; }
+.modal .quote-line:not(.is-open)::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 60px;
+  background: linear-gradient(to bottom, transparent, var(--bg-elev-2));
+}
+.quote-more { display: block; margin: 6px auto 0; }
+.quote-more[hidden] { display: none; }
 .modal .quote-line[hidden] { display: none; }
 
 #suggestions-toggle.on { color: var(--accent); border-color: var(--accent); }

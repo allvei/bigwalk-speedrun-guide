@@ -159,6 +159,10 @@
       </select>
 
       <label for="sg-body">Suggestion <abbr title="required">*</abbr></label>
+      <div class="editor-tabs" role="tablist">
+        <button type="button" class="tab is-active" data-tab="write" role="tab" aria-selected="true">Write</button>
+        <button type="button" class="tab" data-tab="preview" role="tab" aria-selected="false">Preview</button>
+      </div>
       <div class="md-toolbar" role="toolbar" aria-label="Formatting">
         <button type="button" class="icon-btn" data-md="bold" title="Bold" aria-label="Bold">${icon("bold")}</button>
         <button type="button" class="icon-btn" data-md="italic" title="Italic" aria-label="Italic">${icon("italic")}</button>
@@ -166,7 +170,11 @@
         <button type="button" class="icon-btn" data-md="link" title="Link" aria-label="Link">${icon("link")}</button>
         <button type="button" class="icon-btn" data-md="list" title="Bulleted list" aria-label="Bulleted list">${icon("list")}</button>
       </div>
-      <textarea id="sg-body" name="body" required></textarea>
+      <div class="editor-area">
+        <div class="editor-highlight" aria-hidden="true"></div>
+        <textarea id="sg-body" name="body" required spellcheck="true"></textarea>
+      </div>
+      <div class="editor-preview" hidden></div>
 
       <label for="sg-media">Video link</label>
       <input id="sg-media" name="media" type="url" placeholder="https://">
@@ -197,6 +205,10 @@
   const quoteLabel = backdrop.querySelector("[data-quote-label]");
   const uploadHint = backdrop.querySelector("[data-upload-hint]");
   const editOption = form.querySelector('#sg-kind option[value="edit"]');
+  const highlight = form.querySelector(".editor-highlight");
+  const preview = form.querySelector(".editor-preview");
+  const toolbar = form.querySelector(".md-toolbar");
+  const editorArea = form.querySelector(".editor-area");
   const fields = {
     title: form.querySelector("#sg-title"),
     kind: form.querySelector("#sg-kind"),
@@ -215,12 +227,94 @@
   let lastFocused = null;
   let current = { quoteMd: "", sources: [] };
 
+  function escapeHtml(text) {
+    return text.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  }
+
+  /* A long quote is folded behind a fade until asked for. */
+  const quoteMore = document.createElement("button");
+  quoteMore.type = "button";
+  quoteMore.className = "btn tiny quote-more";
+  quoteMore.hidden = true;
+  quoteLabel.after(quoteMore);
+  quoteMore.addEventListener("click", function () {
+    const open = quoteLabel.classList.toggle("is-open");
+    quoteMore.textContent = open ? "Show less" : "Show more";
+  });
+
+  function foldQuote() {
+    quoteLabel.classList.remove("is-open");
+    quoteMore.textContent = "Show more";
+    quoteMore.hidden = quoteLabel.hidden || quoteLabel.scrollHeight <= quoteLabel.clientHeight + 4;
+  }
+
+  /* The layer behind the textarea: the same characters, with markdown styled in place, so
+     **bold** reads bold while its asterisks stay visible and the caret stays aligned. */
+  function paint() {
+    highlight.innerHTML =
+      escapeHtml(fields.body.value)
+        .replace(/(`[^`\n]+`)/g, "<code>$1</code>")
+        .replace(/(\*\*[^*\n]+\*\*)/g, "<strong>$1</strong>")
+        .replace(/(^|[^*])(\*[^*\n]+\*)/g, "$1<em>$2</em>")
+        .replace(/(~~[^~\n]+~~)/g, "<del>$1</del>")
+        .replace(/(\[[^\]\n]+\]\([^)\n]*\))/g, '<span class="md-link">$1</span>')
+        .replace(/^(#{1,4} .*)$/gm, '<span class="md-heading">$1</span>')
+        .replace(/^(\s*[-*] )/gm, '<span class="md-mark">$1</span>') + "\n";
+  }
+
+  /* Preview tab: the same light markdown, rendered. */
+  function renderPreview() {
+    const blocks = fields.body.value.split(/\n{2,}/);
+    preview.innerHTML =
+      blocks
+        .map((block) => {
+          const lines = block.split("\n");
+          if (lines.every((line) => /^\s*[-*] /.test(line))) {
+            return "<ul>" + lines.map((line) => "<li>" + inline(line.replace(/^\s*[-*] /, "")) + "</li>").join("") + "</ul>";
+          }
+          const heading = /^(#{1,4}) (.*)$/.exec(lines[0]);
+          if (heading && lines.length === 1) {
+            const level = heading[1].length + 1;
+            return `<h${level}>${inline(heading[2])}</h${level}>`;
+          }
+          return "<p>" + inline(block).replace(/\n/g, "<br>") + "</p>";
+        })
+        .join("") || '<p class="hint">Nothing to preview yet.</p>';
+  }
+
+  function inline(text) {
+    return escapeHtml(text)
+      .replace(/`([^`\n]+)`/g, "<code>$1</code>")
+      .replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>")
+      .replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>")
+      .replace(/~~([^~\n]+)~~/g, "<del>$1</del>")
+      .replace(/\[([^\]\n]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  }
+
+  function showTab(name) {
+    const writing = name === "write";
+    editorArea.hidden = !writing;
+    toolbar.hidden = !writing;
+    preview.hidden = writing;
+    if (!writing) renderPreview();
+    form.querySelectorAll(".editor-tabs .tab").forEach((tab) => {
+      const on = tab.dataset.tab === name;
+      tab.classList.toggle("is-active", on);
+      tab.setAttribute("aria-selected", String(on));
+    });
+  }
+
+  form.querySelectorAll(".editor-tabs .tab").forEach((tab) => {
+    tab.addEventListener("click", () => showTab(tab.dataset.tab));
+  });
+
   /* The textarea follows its content; the modal only scrolls once it runs out of screen, and
      widens for long lines. */
   function grow() {
     const area = fields.body;
     area.style.height = "auto";
     area.style.height = area.scrollHeight + "px";
+    paint();
     const longest = Math.max(...(current.quoteMd || fields.body.value || "").split("\n").map((l) => l.length), 0);
     const width = longest > 90 ? Math.min(1100, 680 + (longest - 90) * 6) : 680;
     form.style.setProperty("--modal-w", width + "px");
@@ -292,6 +386,7 @@
     if (opts.quoteHtml) quoteLabel.innerHTML = opts.quoteHtml;
     else quoteLabel.textContent = fields.quote.value;
     quoteLabel.hidden = !fields.quote.value;
+    quoteLabel.classList.remove("is-open");
     fields.media.value = opts.mediaUrl || "";
     fields.body.placeholder =
       opts.kind === "media"
@@ -299,7 +394,9 @@
         : "What should it say instead?";
     backdrop.hidden = false;
     document.body.style.overflow = "hidden";
+    showTab("write");
     grow();
+    foldQuote();
     (opts.wantsFile && !fields.file.disabled ? fields.file : hasSelection ? fields.title : fields.body).focus();
   }
 
