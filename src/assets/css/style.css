@@ -573,6 +573,44 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
   .thread-panel.is-open { transform: none; }
 }
 
+/* Suggestions drawer: list of open issues, replaces the thread panel when open. */
+.suggestions-drawer {
+  position: fixed; top: 73px; right: 0; bottom: var(--footer-h); width: var(--panel-w); max-width: 92vw; z-index: 50;
+  box-shadow: -12px 0 30px rgba(0,0,0,.18);
+  display: flex; flex-direction: column;
+  background: var(--bg-elev); border-left: 1px solid var(--border);
+  transform: translateX(100%); opacity: 1;
+  transition: transform .22s ease;
+}
+.suggestions-drawer[hidden] { display: none; }
+.suggestions-drawer.is-open { transform: none; }
+.suggestions-drawer > header {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border);
+}
+.suggestions-drawer > header strong { flex: 1; font-size: .95rem; line-height: 1.35; }
+.suggestions-body { flex: 1; overflow-y: auto; padding: 8px 14px 14px; }
+.suggestion-row {
+  width: 100%; text-align: left; padding: 10px 12px; margin: 0 0 8px;
+  background: var(--bg-elev-2); color: var(--text);
+  border: 1px solid var(--border); border-radius: 8px;
+  cursor: pointer; transition: border-color .15s ease, background-color .15s ease;
+}
+.suggestion-row:hover { border-color: var(--accent); }
+.suggestion-row:active { background: color-mix(in srgb, var(--accent) 15%, var(--bg-elev-2)); }
+.suggestion-title { display: block; font-weight: 600; font-size: .9rem; line-height: 1.3; }
+.suggestion-meta { display: block; font-size: .75rem; color: var(--muted); margin: 3px 0 0; }
+
+@media (max-width: 700px) {
+  .suggestions-drawer {
+    top: auto; left: 0; right: 0; bottom: var(--footer-h); width: 100%; max-width: none;
+    height: 65vh; border-left: 0; border-top: 1px solid var(--border);
+    box-shadow: 0 -12px 30px rgba(0,0,0,.25);
+    opacity: 1; transform: translateY(100%);
+    transition: transform .24s ease;
+  }
+  .suggestions-drawer.is-open { transform: none; }
+}
+
 /* Diff view inside a thread */
 .diff { margin: 8px 0 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; font-size: .85rem; }
 .diff-line { padding: 3px 10px 3px 22px; position: relative; white-space: pre-wrap; word-break: break-word; }

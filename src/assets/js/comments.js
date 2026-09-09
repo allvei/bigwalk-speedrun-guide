@@ -199,6 +199,26 @@
     return list;
   }
 
+  /* Extract the section from an issue, preferring the anchor comment, then the metadata table. */
+  function issueSection(issue) {
+    const anchor = (issue.body || "").match(ANCHOR);
+    if (anchor) {
+      try {
+        const data = JSON.parse(anchor[1]);
+        if (data.section) return data.section;
+      } catch (_) {}
+    }
+    const parsed = parseBody(issue.body || "");
+    const row = parsed.meta.find(([k]) => k.toLowerCase() === "section");
+    return row ? row[1] : "";
+  }
+
+  /* Kind badge from the worker's `kind:...` label. */
+  function issueKind(issue) {
+    const label = (issue.labels || []).find((l) => l.name && l.name.startsWith("kind:"));
+    return label ? label.name.replace("kind:", "") : "other";
+  }
+
   /* ---------- highlighting ---------- */
 
   function textIndex(root) {
@@ -276,6 +296,85 @@
       </div>
     </footer>`;
   document.body.appendChild(panel);
+
+  const drawer = document.createElement("aside");
+  drawer.className = "suggestions-drawer";
+  drawer.hidden = true;
+  drawer.innerHTML = `
+    <header>
+      <strong>Suggestions</strong>
+      <button type="button" class="icon-btn" data-suggestions-close aria-label="Close">&times;</button>
+    </header>
+    <div class="suggestions-body"></div>`;
+  document.body.appendChild(drawer);
+
+  const drawerBody = drawer.querySelector(".suggestions-body");
+  if (window.watchScrollFade) window.watchScrollFade(drawerBody, 45);
+
+  drawer.querySelector("[data-suggestions-close]").addEventListener("click", closeDrawer);
+  document.addEventListener("keydown", (e) => e.key === "Escape" && closeDrawer());
+
+  function openDrawer() {
+    if (drawer.hidden) {
+      closePanel();
+      drawer.hidden = false;
+      requestAnimationFrame(() => drawer.classList.add("is-open"));
+      document.body.classList.add("drawer-open");
+    }
+  }
+
+  function closeDrawer() {
+    if (drawer.hidden) return;
+    drawer.classList.remove("is-open");
+    window.setTimeout(() => {
+      if (!drawer.classList.contains("is-open")) drawer.hidden = true;
+    }, 260);
+    document.body.classList.remove("drawer-open");
+  }
+
+  function issueRow(issue) {
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = "suggestion-row";
+    const title = document.createElement("span");
+    title.className = "suggestion-title";
+    title.textContent = issue.title;
+    const meta = document.createElement("span");
+    meta.className = "suggestion-meta";
+    const kind = issueKind(issue);
+    const section = issueSection(issue) || "Whole page";
+    meta.textContent = (kind ? kind + " · " : "") + section;
+    row.append(title, meta);
+    row.addEventListener("click", () => {
+      closeDrawer();
+      openThread(issue);
+      if (issue.__quote) {
+        const mark = document.querySelector('.suggestion-mark[data-issue="' + issue.number + '"]');
+        if (mark) {
+          document.querySelectorAll(".suggestion-mark.active").forEach((m) => m.classList.remove("active"));
+          document
+            .querySelectorAll('.suggestion-mark[data-issue="' + issue.number + '"]')
+            .forEach((m) => m.classList.add("active"));
+          mark.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }
+    });
+    return row;
+  }
+
+  function renderList(issues) {
+    drawerBody.replaceChildren();
+    if (!issues || !issues.length) {
+      drawerBody.append(
+        Object.assign(document.createElement("p"), {
+          className: "thread-loading",
+          textContent: "No open suggestions.",
+        })
+      );
+      return;
+    }
+    issues.forEach((issue) => drawerBody.append(issueRow(issue)));
+  }
 
   const panelTitle = panel.querySelector("[data-thread-title]");
   const panelBody = panel.querySelector(".thread-body");
@@ -371,6 +470,7 @@
 
   async function openThread(issue) {
     openIssue = issue;
+    closeDrawer();
     panel.hidden = false;
     requestAnimationFrame(() => panel.classList.add("is-open"));
     replyForm.hidden = !session.signedIn;
@@ -433,20 +533,31 @@
     }
   }
 
+  let issuesByNumber = new Map();
+  let allIssues = [];
   let bound = false;
 
-  async function load() {
+  async function load(mark) {
     const main = document.getElementById("main");
     if (!main || !cfg.repo) return;
     unmark(main);
 
     const issues = await fetchIssues();
     if (!issues) return;
+    allIssues = issues;
+    renderList(issues);
+
+    if (!mark) {
+      issuesByNumber = new Map();
+      issues.forEach((issue) => issuesByNumber.set(String(issue.number), issue));
+      return;
+    }
 
     const index = textIndex(main);
-    const byNumber = new Map();
+    issuesByNumber = new Map();
 
     issues.forEach((issue) => {
+      issuesByNumber.set(String(issue.number), issue);
       const match = ANCHOR.exec(issue.body || "");
       if (!match) return;
       let quote;
@@ -459,7 +570,6 @@
       const at = index.text.indexOf(quote);
       if (at === -1) return;
       issue.__quote = quote;
-      byNumber.set(String(issue.number), issue);
       markRange(index, at, at + quote.length, issue);
     });
 
@@ -468,7 +578,7 @@
     main.addEventListener("click", function (event) {
       const mark = event.target.closest(".suggestion-mark");
       if (!mark) return;
-      const issue = byNumber.get(mark.dataset.issue);
+      const issue = issuesByNumber.get(mark.dataset.issue);
       if (!issue) return;
       document.querySelectorAll(".suggestion-mark.active").forEach((m) => m.classList.remove("active"));
       document
@@ -485,7 +595,7 @@
     button.setAttribute("aria-pressed", String(on));
     button.classList.toggle("on", on);
     if (on) {
-      load();
+      load(true);
     } else {
       const main = document.getElementById("main");
       if (main) unmark(main);
@@ -531,6 +641,7 @@
 
   document.addEventListener("DOMContentLoaded", async function () {
     const button = document.getElementById("suggestions-toggle");
+    const listButton = document.getElementById("suggestions-list");
     const authButton = document.getElementById("auth-btn");
     if (authButton) {
       authButton.hidden = true;
@@ -546,6 +657,13 @@
 
     await whoami();
     if (authButton) renderAuth(authButton);
+    load(false);
+    if (listButton) {
+      listButton.addEventListener("click", function () {
+        if (drawer.classList.contains("is-open")) closeDrawer();
+        else openDrawer();
+      });
+    }
     if (!button) return;
 
     const stored = localStorage.getItem(STORE);
