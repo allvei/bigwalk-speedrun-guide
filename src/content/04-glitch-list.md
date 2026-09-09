@@ -82,7 +82,7 @@ The Blue House Lantern Clip video contains several methods of completing the Blu
 
 ### Tomato Bump
 
-*Discovered by Beaver*
+*Discovered by @che_da*
 
 - **Cannon Puzzle 1P** by Beaver: https://www.youtube.com/watch?v=_Knu1btNYao
 
