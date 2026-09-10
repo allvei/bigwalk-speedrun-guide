@@ -43,7 +43,7 @@
     const box = el("details", "media");
     const summary = el("summary", "media-summary");
     if (thumbSrc) {
-      summary.append(el("img", "media-thumb", { src: thumbSrc, alt: "", loading: "lazy" }));
+      summary.append(el("img", "media-thumb", { src: thumbSrc, alt: "" }));
     }
     const info = el("span", "media-info");
     info.append(el("span", "media-title", { textContent: title }));
@@ -53,7 +53,7 @@
     summary.append(info);
 
     const frame = el("div", "media-frame");
-    box.append(frame);
+    box.append(summary, frame);
     box.addEventListener("toggle", function () {
       if (box.open) {
         if (!frame.firstChild) frame.append(buildPlayer());
