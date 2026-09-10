@@ -479,7 +479,7 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 }
 :root[data-theme="dark"] .rules-cat .editor-tabs .tab.is-active { color: #1a1512; }
 .rules-output {
-  padding: 16px; margin-top: 0;
+  padding: 16px; margin: 0 0 1.5rem;
   background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius);
 }
 .rules-category { margin: 0; }
