@@ -21,67 +21,126 @@ order: 2.5
 
 ### Category Rules
 
-<div class="rules-at1">
-  <strong class="rules-at1-label">Game Mode (AT1):</strong>
-  <div class="editor-tabs" role="tablist" aria-label="Game mode">
-    <button type="button" class="tab is-active" data-at1="2 Player" role="tab" aria-selected="true">2P</button>
-    <button type="button" class="tab" data-at1="3 Player" role="tab" aria-selected="false">3P</button>
-    <button type="button" class="tab" data-at1="4 Player" role="tab" aria-selected="false">4P</button>
+<div class="rules-controls">
+  <div class="rules-cat">
+    <strong class="rules-cat-label">Game Mode:</strong>
+    <div class="editor-tabs" role="tablist" aria-label="Game mode">
+      <button type="button" class="tab is-active" data-player="2 Player" role="tab" aria-selected="true">2P</button>
+      <button type="button" class="tab" data-player="3 Player" role="tab" aria-selected="false">3P</button>
+      <button type="button" class="tab" data-player="4 Player" role="tab" aria-selected="false">4P</button>
+    </div>
+  </div>
+  <div class="rules-cat">
+    <strong class="rules-cat-label">Ending:</strong>
+    <div class="editor-tabs" role="tablist" aria-label="Category ending">
+      <button type="button" class="tab is-active" data-ending="big-goodbye" role="tab" aria-selected="true">Big Goodbye</button>
+      <button type="button" class="tab" data-ending="big-game" role="tab" aria-selected="false">Big Game</button>
+    </div>
+  </div>
+  <div class="rules-cat">
+    <strong class="rules-cat-label">Type:</strong>
+    <div class="editor-tabs" role="tablist" aria-label="Category type">
+      <button type="button" class="tab is-active" data-type="unrestricted" role="tab" aria-selected="true">Unrestricted</button>
+      <button type="button" class="tab" data-type="glitched" role="tab" aria-selected="false">Glitched</button>
+      <button type="button" class="tab" data-type="glitchless" role="tab" aria-selected="false">Glitchless</button>
+    </div>
   </div>
 </div>
 
-#### Big Goodbye Unrestricted
-
-- Get the "Big Goodbye" ending as fast as possible by any means necessary.
-- Only requires Host POV.
-
-#### Big Goodbye Glitched
-
-- Get the "Big Goodbye" ending as fast as possible while meeting the following conditions:
-  - You must open the entrance to black tower.
-  - You must place the black key in its keyhole.
-  - You must power down both silencers.
-  - You may use any glitches.
-- Upon creation of the new game, you must select <span data-at1-player>2 Player</span> mode.
-
-#### Big Goodbye Glitchless
-
-- Get the "Big Goodbye" ending as fast as possible.
-- No glitches may be used.
-- Upon creation of the new game, you must select <span data-at1-player>2 Player</span> mode.
-
-#### Big Game Unrestricted
-
-- Get the "Big Game" ending as fast as possible by any means necessary.
-- Only requires Host POV.
-
-#### Big Game Glitched
-
-- Rules to be determined after some testing on our part! Please don't submit runs here until we have.
-- Upon creation of the new game, you must select <span data-at1-player>2 Player</span> mode.
-
-#### Big Game Glitchless
-
-- Get the "Big Game" ending as fast as possible.
-- No glitches may be used.
-- Upon creation of the new game, you must select <span data-at1-player>2 Player</span> mode.
+<div class="rules-output">
+  <div class="rules-category" data-ending="big-goodbye" data-type="unrestricted">
+    <p><strong>Big Goodbye · Unrestricted</strong></p>
+    <ul>
+      <li>Get the "Big Goodbye" ending as fast as possible by any means necessary.</li>
+      <li>Only requires Host POV.</li>
+    </ul>
+  </div>
+  <div class="rules-category" data-ending="big-goodbye" data-type="glitched" hidden>
+    <p><strong>Big Goodbye · Glitched</strong></p>
+    <ul>
+      <li>Get the "Big Goodbye" ending as fast as possible while meeting the following conditions:
+        <ul>
+          <li>You must open the entrance to black tower.</li>
+          <li>You must place the black key in its keyhole.</li>
+          <li>You must power down both silencers.</li>
+          <li>You may use any glitches.</li>
+        </ul>
+      </li>
+      <li>Upon creation of the new game, you must select <span data-player-text>2 Player</span> mode.</li>
+    </ul>
+  </div>
+  <div class="rules-category" data-ending="big-goodbye" data-type="glitchless" hidden>
+    <p><strong>Big Goodbye · Glitchless</strong></p>
+    <ul>
+      <li>Get the "Big Goodbye" ending as fast as possible.</li>
+      <li>No glitches may be used.</li>
+      <li>Upon creation of the new game, you must select <span data-player-text>2 Player</span> mode.</li>
+    </ul>
+  </div>
+  <div class="rules-category" data-ending="big-game" data-type="unrestricted" hidden>
+    <p><strong>Big Game · Unrestricted</strong></p>
+    <ul>
+      <li>Get the "Big Game" ending as fast as possible by any means necessary.</li>
+      <li>Only requires Host POV.</li>
+    </ul>
+  </div>
+  <div class="rules-category" data-ending="big-game" data-type="glitched" hidden>
+    <p><strong>Big Game · Glitched</strong></p>
+    <ul>
+      <li>Rules to be determined after some testing on our part! Please don't submit runs here until we have.</li>
+      <li>Upon creation of the new game, you must select <span data-player-text>2 Player</span> mode.</li>
+    </ul>
+  </div>
+  <div class="rules-category" data-ending="big-game" data-type="glitchless" hidden>
+    <p><strong>Big Game · Glitchless</strong></p>
+    <ul>
+      <li>Get the "Big Game" ending as fast as possible.</li>
+      <li>No glitches may be used.</li>
+      <li>Upon creation of the new game, you must select <span data-player-text>2 Player</span> mode.</li>
+    </ul>
+  </div>
+</div>
 
 <script>
 (function () {
-  const tabs = document.querySelectorAll('[data-at1]');
-  if (!tabs.length) return;
-  tabs.forEach(function (tab) {
-    tab.addEventListener('click', function () {
-      tabs.forEach(function (t) {
-        t.classList.remove('is-active');
-        t.setAttribute('aria-selected', 'false');
-      });
-      tab.classList.add('is-active');
-      tab.setAttribute('aria-selected', 'true');
-      document.querySelectorAll('[data-at1-player]').forEach(function (el) {
-        el.textContent = tab.dataset.at1;
+  function tabGroup(selector, onChange) {
+    const tabs = document.querySelectorAll(selector);
+    if (!tabs.length) return;
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        tabs.forEach(function (t) {
+          t.classList.remove('is-active');
+          t.setAttribute('aria-selected', 'false');
+        });
+        tab.classList.add('is-active');
+        tab.setAttribute('aria-selected', 'true');
+        onChange();
       });
     });
-  });
+  }
+
+  function showCategory() {
+    const endingEl = document.querySelector('[data-ending].is-active');
+    const typeEl = document.querySelector('[data-type].is-active');
+    const ending = endingEl ? endingEl.dataset.ending : 'big-goodbye';
+    const type = typeEl ? typeEl.dataset.type : 'unrestricted';
+    document.querySelectorAll('.rules-category').forEach(function (el) {
+      el.hidden = el.dataset.ending !== ending || el.dataset.type !== type;
+    });
+    updatePlayer();
+  }
+
+  function updatePlayer() {
+    const playerEl = document.querySelector('[data-player].is-active');
+    const player = playerEl ? playerEl.dataset.player : '2 Player';
+    document.querySelectorAll('[data-player-text]').forEach(function (el) {
+      el.textContent = player;
+    });
+  }
+
+  tabGroup('[data-player]', updatePlayer);
+  tabGroup('[data-ending]', showCategory);
+  tabGroup('[data-type]', showCategory);
+  showCategory();
 })();
 </script>

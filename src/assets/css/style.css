@@ -462,9 +462,12 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
   background: var(--bg); border-color: var(--border); color: var(--text);
 }
 
-/* Rules AT1 selector mimics the editor tab row. */
-.rules-at1 { display: flex; align-items: center; gap: 12px; margin: 1rem 0; flex-wrap: wrap; }
-.rules-at1 .editor-tabs .tab { min-width: 48px; text-align: center; }
+/* Rules category selectors mimic the editor tab row. */
+.rules-controls { display: flex; flex-wrap: wrap; gap: 12px; }
+.rules-cat { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.rules-cat .editor-tabs .tab { min-width: 48px; text-align: center; }
+.rules-output { margin-top: 1rem; }
+.rules-category[hidden] { display: none; }
 
 /* Swapping tabs animates the box height; only the text fades, so the box itself never blinks.
    The frame lives on the container, which is why the textarea inside it carries no border. */
