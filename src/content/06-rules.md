@@ -1,6 +1,6 @@
 ---
 title: Rules
-order: 6
+order: 2.5
 ---
 
 ## Rules
@@ -22,12 +22,12 @@ order: 6
 ### Category Rules
 
 <div class="rules-at1">
-  <label for="at1-select">Game Mode (AT1):</label>
-  <select id="at1-select" aria-label="Game mode variable">
-    <option value="2" selected>2 Player</option>
-    <option value="3">3 Player</option>
-    <option value="4">4 Player</option>
-  </select>
+  <strong class="rules-at1-label">Game Mode (AT1):</strong>
+  <div class="editor-tabs" role="tablist" aria-label="Game mode">
+    <button type="button" class="tab is-active" data-at1="2 Player" role="tab" aria-selected="true">2P</button>
+    <button type="button" class="tab" data-at1="3 Player" role="tab" aria-selected="false">3P</button>
+    <button type="button" class="tab" data-at1="4 Player" role="tab" aria-selected="false">4P</button>
+  </div>
 </div>
 
 #### Big Goodbye Unrestricted
@@ -68,14 +68,20 @@ order: 6
 
 <script>
 (function () {
-  const select = document.getElementById('at1-select');
-  if (!select) return;
-  function update() {
-    const text = select.options[select.selectedIndex].text;
-    document.querySelectorAll('[data-at1-player]').forEach(function (el) {
-      el.textContent = text;
+  const tabs = document.querySelectorAll('[data-at1]');
+  if (!tabs.length) return;
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      tabs.forEach(function (t) {
+        t.classList.remove('is-active');
+        t.setAttribute('aria-selected', 'false');
+      });
+      tab.classList.add('is-active');
+      tab.setAttribute('aria-selected', 'true');
+      document.querySelectorAll('[data-at1-player]').forEach(function (el) {
+        el.textContent = tab.dataset.at1;
+      });
     });
-  }
-  select.addEventListener('change', update);
+  });
 })();
 </script>
