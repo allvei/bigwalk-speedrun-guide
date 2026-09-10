@@ -2,11 +2,17 @@
  * Turns links in the compendium into players:
  *   YouTube  -> folded thumbnail that opens into an autoplaying iframe, keeping ?t= timestamps
  *   Video files (/assets/videos/*) -> folded thumbnail that opens into a <video>
- *   Discord  -> a button linking to the message, with an upload button on hover
+ *   Discord  -> a matching card that links to the Discord message, plus an upload button
  */
 (function () {
   const VIDEO_EXT = /\.(mp4|webm|mov|m4v)(\?.*)?$/i;
   const PLACEHOLDER = "data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=";
+  const DISCORD_THUMB =
+    "data:image/svg+xml," +
+    encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="96" height="54"><rect width="96" height="54" fill="#000"/>' +
+      '<text x="50%" y="50%" dy=".3em" text-anchor="middle" fill="#888" font-family="sans-serif" font-size="13">Discord</text></svg>'
+    );
 
   function youtubeInfo(url) {
     let id = null;
@@ -32,18 +38,19 @@
     return node;
   }
 
-  /* A folded player: thumbnail plus title and credit, expanding into the real player on open. */
+  /* A folded player: thumbnail, title and credit, expanding into the real player on open. */
   function mediaBox(title, credit, thumbSrc, buildPlayer) {
     const box = el("details", "media");
     const summary = el("summary", "media-summary");
     if (thumbSrc) {
       summary.append(el("img", "media-thumb", { src: thumbSrc, alt: "", loading: "lazy" }));
     }
-    summary.append(el("span", "media-title", { textContent: title }));
+    const info = el("span", "media-info");
+    info.append(el("span", "media-title", { textContent: title }));
     if (credit) {
-      summary.append(el("span", "media-credit", { textContent: "by " + credit }));
+      info.append(el("span", "media-credit", { textContent: "by " + credit }));
     }
-    box.append(summary);
+    summary.append(info);
 
     const frame = el("div", "media-frame");
     box.append(frame);
@@ -115,14 +122,29 @@
     return box;
   }
 
-  function uploadButton(discordUrl, block) {
-    const button = el("button", "btn tiny upload-btn", { type: "button" });
+  function discordCard(href, title, credit, block) {
+    const box = mediaBox(title, credit, DISCORD_THUMB, function () {
+      const actions = el("div", "media-discord-actions");
+      const link = el("a", "btn tiny discord-btn", {
+        href,
+        target: "_blank",
+        rel: "noopener",
+        textContent: "Clip on Discord",
+      });
+      actions.append(link, uploadButton(href, box));
+      return actions;
+    });
+    return box;
+  }
+
+  function uploadButton(discordUrl, node) {
+    const button = el("button", "btn tiny", { type: "button" });
     button.textContent = "Upload";
     button.title = "Replace this link with a file we can embed to the page";
     button.addEventListener("click", function () {
       window.dispatchEvent(
         new CustomEvent("suggest:open", {
-          detail: { kind: "media", node: block, mediaUrl: discordUrl, wantsFile: true },
+          detail: { kind: "media", node: node, mediaUrl: discordUrl, wantsFile: true },
         })
       );
     });
@@ -179,11 +201,8 @@
         a.remove();
         place(block, videoCard(url.href, title, credit));
       } else if (/(^|\.)discord\.com$/.test(url.hostname) && url.pathname.startsWith("/channels/")) {
-        const group = el("span", "clip-group");
-        a.replaceWith(group);
-        a.textContent = "Clip on Discord";
-        a.className = "btn tiny discord-btn";
-        group.append(a, uploadButton(a.href, block));
+        a.remove();
+        place(block, discordCard(a.href, title, credit, block));
       }
     });
   }

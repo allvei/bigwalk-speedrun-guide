@@ -328,9 +328,8 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 .btn.tiny { font-size: .74rem; padding: 2px 9px; min-height: 24px; gap: 5px; }
 .discord-btn, .discord-btn:hover { text-decoration: none; color: var(--text); }
 .discord-btn:hover { color: var(--accent); border-color: var(--accent); }
-.clip-group { display: inline-flex; align-items: center; }
-.upload-btn { display: none; margin-left: 10px; }
-.clip-group:hover .upload-btn, .clip-group:focus-within .upload-btn { display: inline-block; }
+
+/* Media */
 
 /* Media */
 .media {
@@ -344,6 +343,7 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 }
 .media-summary::-webkit-details-marker { display: none; }
 .media-summary:hover { color: var(--accent); }
+.media-info { display: flex; flex-direction: column; gap: 2px; }
 .media-title { position: relative; padding-right: 16px; font-weight: 600; }
 .media-credit { font-size: .85em; opacity: .85; }
 .media-title::after {
@@ -357,6 +357,10 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 }
 .media-frame { position: relative; aspect-ratio: 16 / 9; background: #000; }
 .media-frame iframe, .media-frame video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.media-discord-actions {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  gap: 12px; padding: 16px; background: var(--bg-elev-2);
+}
 
 /* Modal */
 /* The box is pinned near the top rather than centred: centring splits every height change in
