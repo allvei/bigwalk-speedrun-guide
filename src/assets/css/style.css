@@ -344,7 +344,8 @@ main code { background: var(--bg-elev-2); padding: 1px 5px; border-radius: 4px; 
 }
 .media-summary::-webkit-details-marker { display: none; }
 .media-summary:hover { color: var(--accent); }
-.media-title { position: relative; padding-right: 16px; }
+.media-title { position: relative; padding-right: 16px; font-weight: 600; }
+.media-credit { font-size: .85em; opacity: .85; }
 .media-title::after {
   content: ""; position: absolute; right: 0; top: 50%; width: 6px; height: 6px;
   border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
