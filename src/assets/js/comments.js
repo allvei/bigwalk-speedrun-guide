@@ -129,8 +129,9 @@
   function diffSlice(mine, other) {
     mine = mine || " ";
     if (other == null) return inlineMarkdown(mine);
-    const a = mine.match(/\w+|\W+/g) || [mine];
-    const b = other.match(/\w+|\W+/g) || [other];
+    const tokenise = /`[^`]+`|\w+|[^\w`]+|`/g;
+    const a = mine.match(tokenise) || [mine];
+    const b = other.match(tokenise) || [other];
     let pre = 0;
     while (pre < a.length && pre < b.length && a[pre] === b[pre]) pre++;
     let suf = 0;
