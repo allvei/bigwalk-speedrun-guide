@@ -257,7 +257,7 @@ main h4 { font-size: 1.02rem; margin: 1.6rem 0 .3rem; color: var(--accent); }
 main h2:first-child { margin-top: 0; }
 main img { max-width: 100%; height: auto; border-radius: var(--radius); border: 1px solid var(--border); }
 main figure { margin: 1.25rem 0; }
-main figure img { display: block; }
+main figure img { display: block; transition: max-width .45s ease; }
 /* In full-width mode the container is much wider than the text, so a figure fills the whole
    row and dwarfs everything around it. Capped at half the container, the art stays a feature
    rather than the whole page. */
